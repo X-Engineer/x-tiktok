@@ -13,8 +13,8 @@ var Db *gorm.DB
 func init() {
 	// 配置 MySQL
 	username := "root"
-	password := "1234567"
-	host := "localhost"
+	password := "tiktok123"
+	host := "106.14.252.145"
 	port := 3306
 	dbname := "tiktok"
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local", username, password, host, port, dbname)
