@@ -16,7 +16,7 @@ type Follow struct {
 }
 
 func (Follow) TableName() string {
-	return "follows"
+	return "relation"
 }
 
 type FollowDao struct {
@@ -34,27 +34,6 @@ func NewFollowDaoInstance() *FollowDao {
 			followDao = &FollowDao{}
 		})
 	return followDao
-}
-
-// FindRelation 给定当前用户和目标用户id，查询relation表中相应的记录。
-func (*FollowDao) FindRelation(userId int64, targetId int64) (*Follow, error) {
-	// follow变量用于后续存储数据库查出来的用户关系。
-	follow := Follow{}
-	//当查询出现错误时，日志打印err msg，并return err.
-	if err := Db.
-		Where("user_id = ?", userId).
-		Where("following_id = ?", targetId).
-		Where("followed = ?", 0).
-		Take(&follow).Error; nil != err {
-		// 当没查到数据时，gorm也会报错。
-		if "record not found" == err.Error() {
-			return nil, nil
-		}
-		log.Println(err.Error())
-		return nil, err
-	}
-	//正常情况，返回取到的值和空err.
-	return &follow, nil
 }
 
 // GetFollowerCnt 给定当前用户id，查询relation表中该用户的粉丝数。
@@ -94,12 +73,14 @@ func (*FollowDao) GetFollowingCnt(userId int64) (int64, error) {
 func (*FollowDao) FindEverFollowing(userId int64, targetId int64) (*Follow, error) {
 	// 用于存储查出来的关注关系。
 	follow := Follow{}
-	//当查询出现错误时，日志打印err msg，并return err.
-	if err := Db.
+	// 查询是否存在记录
+	err := Db.
 		Where("user_id = ?", userId).
 		Where("following_id = ?", targetId).
 		Where("followed = ? or followed = ?", 0, 1).
-		Take(&follow).Error; nil != err {
+		Take(&follow).Error
+	// 当查询出现错误时，日志打印err msg，并return err.
+	if nil != err {
 		// 当没查到记录报错时，不当做错误处理。
 		if "record not found" == err.Error() {
 			return nil, nil
@@ -107,7 +88,7 @@ func (*FollowDao) FindEverFollowing(userId int64, targetId int64) (*Follow, erro
 		log.Println(err.Error())
 		return nil, err
 	}
-	//正常情况，返回取到的关系和空err.
+	// 正常情况，返回取到的关系和空err.
 	return &follow, nil
 }
 
@@ -120,8 +101,10 @@ func (*FollowDao) InsertFollowRelation(userId int64, targetId int64) (bool, erro
 		Followed:    0,
 		CreateAt:    time.Now().Format("2006-01-02 15:04:05"),
 	}
+	//
+	err := Db.Select("UserId", "FollowingId", "Followed", "CreateAt").Create(&follow).Error
 	// 插入失败，返回err.
-	if err := Db.Select("UserId", "FollowingId", "Followed", "CreateAt").Create(&follow).Error; nil != err {
+	if nil != err {
 		log.Println(err.Error())
 		return false, err
 	}
@@ -142,4 +125,25 @@ func (*FollowDao) UpdateFollowRelation(userId int64, targetId int64, followed in
 	}
 	// 更新成功。
 	return true, nil
+}
+
+// FindRelation 给定当前用户和目标用户id，查询relation表中相应的记录。   ！当前函数未使用，使用版本是FindEverFollowing !
+func (*FollowDao) FindRelation(userId int64, targetId int64) (*Follow, error) {
+	// follow变量用于后续存储数据库查出来的用户关系。
+	follow := Follow{}
+	//当查询出现错误时，日志打印err msg，并return err.
+	if err := Db.
+		Where("user_id = ?", userId).
+		Where("following_id = ?", targetId).
+		Where("followed = ?", 0).
+		Take(&follow).Error; nil != err {
+		// 当没查到数据时，gorm也会报错。
+		if "record not found" == err.Error() {
+			return nil, nil
+		}
+		log.Println(err.Error())
+		return nil, err
+	}
+	//正常情况，返回取到的值和空err.
+	return &follow, nil
 }
