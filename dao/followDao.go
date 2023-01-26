@@ -11,8 +11,8 @@ type Follow struct {
 	UserId      int64
 	FollowingId int64
 	Followed    int8
-	CreateAt    string
-	UpdateAt    string
+	CreatedAt   string
+	UpdatedAt   string
 }
 
 func (Follow) TableName() string {
@@ -98,8 +98,8 @@ func (*FollowDao) InsertFollowRelation(userId int64, targetId int64) (bool, erro
 	follow := Follow{
 		UserId:      userId,
 		FollowingId: targetId,
-		Followed:    0,
-		CreateAt:    time.Now().Format("2006-01-02 15:04:05"),
+		Followed:    1,
+		CreatedAt:   time.Now().Format("2006-01-02 15:04:05"),
 	}
 	//
 	err := Db.Select("UserId", "FollowingId", "Followed", "CreateAt").Create(&follow).Error
