@@ -11,12 +11,12 @@ type Follow struct {
 	UserId      int64
 	FollowingId int64
 	Followed    int8
-	CreateAt    string
-	UpdateAt    string
+	CreatedAt   string
+	UpdatedAt   string
 }
 
 func (Follow) TableName() string {
-	return "follows"
+	return "relation"
 }
 
 type FollowDao struct {
@@ -95,11 +95,11 @@ func (*FollowDao) FindEverFollowing(userId int64, targetId int64) (*Follow, erro
 	// 用于存储查出来的关注关系。
 	follow := Follow{}
 	//当查询出现错误时，日志打印err msg，并return err.
-	if err := Db.
+	err := Db.
 		Where("user_id = ?", userId).
 		Where("following_id = ?", targetId).
-		Where("followed = ? or followed = ?", 0, 1).
-		Take(&follow).Error; nil != err {
+		Take(&follow).Error
+	if nil != err {
 		// 当没查到记录报错时，不当做错误处理。
 		if "record not found" == err.Error() {
 			return nil, nil
@@ -117,11 +117,11 @@ func (*FollowDao) InsertFollowRelation(userId int64, targetId int64) (bool, erro
 	follow := Follow{
 		UserId:      userId,
 		FollowingId: targetId,
-		Followed:    0,
-		CreateAt:    time.Now().Format("2006-01-02 15:04:05"),
+		Followed:    1,
+		CreatedAt:   time.Now().Format("2006-01-02 15:04:05"),
 	}
 	// 插入失败，返回err.
-	if err := Db.Select("UserId", "FollowingId", "Followed", "CreateAt").Create(&follow).Error; nil != err {
+	if err := Db.Select("UserId", "FollowingId", "Followed", "CreatedAt").Create(&follow).Error; nil != err {
 		log.Println(err.Error())
 		return false, err
 	}
