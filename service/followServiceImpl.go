@@ -30,8 +30,8 @@ func NewFSIInstance() *FollowServiceImp {
 	return followServiceImp
 }
 
-// AddFollowRelation 给定当前用户和目标对象id，添加他们之间的关注关系。
-func (*FollowServiceImp) AddFollowRelation(userId int64, targetId int64) (bool, error) {
+// FollowAction 关注操作的业务
+func (*FollowServiceImp) FollowAction(userId int64, targetId int64) (bool, error) {
 	followDao := dao.NewFollowDaoInstance()
 	follow, err := followDao.FindEverFollowing(userId, targetId)
 	// 寻找SQL 出错。
@@ -58,8 +58,8 @@ func (*FollowServiceImp) AddFollowRelation(userId int64, targetId int64) (bool, 
 	return true, nil
 }
 
-// DeleteFollowRelation 给定当前用户和目标用户id，删除其关注关系。
-func (*FollowServiceImp) DeleteFollowRelation(userId int64, targetId int64) (bool, error) {
+// CancelFollowAction 取关操作的业务
+func (*FollowServiceImp) CancelFollowAction(userId int64, targetId int64) (bool, error) {
 	followDao := dao.NewFollowDaoInstance()
 	follow, err := followDao.FindEverFollowing(userId, targetId)
 	// 寻找 SQL 出错。

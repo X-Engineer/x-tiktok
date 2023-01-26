@@ -101,7 +101,7 @@ func (*FollowDao) InsertFollowRelation(userId int64, targetId int64) (bool, erro
 		Followed:    1,
 		CreatedAt:   time.Now().Format("2006-01-02 15:04:05"),
 	}
-	//
+	// 插入用户与目标用户的关注记录
 	err := Db.Select("UserId", "FollowingId", "Followed", "CreateAt").Create(&follow).Error
 	// 插入失败，返回err.
 	if nil != err {
@@ -114,11 +114,13 @@ func (*FollowDao) InsertFollowRelation(userId int64, targetId int64) (bool, erro
 
 // UpdateFollowRelation 给定用户和目标用户的id，更新他们的关系为取消关注或再次关注。
 func (*FollowDao) UpdateFollowRelation(userId int64, targetId int64, followed int8) (bool, error) {
-	// 更新失败，返回错误。
-	if err := Db.Model(Follow{}).
+	// 更新用户与目标用户的关注记录（正在关注或者取消关注）
+	err := Db.Model(Follow{}).
 		Where("user_id = ?", userId).
 		Where("following_id = ?", targetId).
-		Update("followed", followed).Error; nil != err {
+		Update("followed", followed).Error
+	// 更新失败，返回错误。
+	if nil != err {
 		// 更新失败，打印错误日志。
 		log.Println(err.Error())
 		return false, err
