@@ -40,7 +40,7 @@ func (*FollowServiceImp) FollowAction(userId int64, targetId int64) (bool, error
 	}
 	// 曾经关注过，只需要update一下followed即可。
 	if nil != follow {
-		_, err := followDao.UpdateFollowRelation(userId, targetId, 0)
+		_, err := followDao.UpdateFollowRelation(userId, targetId, 1)
 		// update 出错。
 		if nil != err {
 			return false, err
@@ -68,7 +68,7 @@ func (*FollowServiceImp) CancelFollowAction(userId int64, targetId int64) (bool,
 	}
 	// 曾经关注过，只需要update一下cancel即可。
 	if nil != follow {
-		_, err := followDao.UpdateFollowRelation(userId, targetId, 1)
+		_, err := followDao.UpdateFollowRelation(userId, targetId, 0)
 		// update 出错。
 		if nil != err {
 			return false, err
