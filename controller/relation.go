@@ -21,8 +21,9 @@ type UserListResponse struct {
 // RelationAction no practical effect, just check if token is valid
 func RelationAction(c *gin.Context) {
 	//token := c.Query("token")
+	//todo token的鉴权还没有做
 	//if _, exist := usersLoginInfo[token]; exist {
-	userId, err1 := strconv.ParseInt(c.GetString("user_id"), 10, 64)
+	userId, err1 := strconv.ParseInt(c.Query("token"), 10, 64)
 	toUserId, err2 := strconv.ParseInt(c.Query("to_user_id"), 10, 64)
 	actionType, err3 := strconv.ParseInt(c.Query("action_type"), 10, 64)
 	//fmt.Sprintf("%d %d %d", userId, toUserId, actionType)
@@ -30,12 +31,12 @@ func RelationAction(c *gin.Context) {
 	fmt.Println(toUserId)
 	fmt.Println(actionType)
 	// 传入参数格式有问题。
-	if nil != err1 || nil != err2 || nil != err3 || actionType < 0 || actionType > 1 {
+	if nil != err1 || nil != err2 || nil != err3 || actionType < 1 || actionType > 2 {
 		fmt.Printf("fail")
 		c.JSON(http.StatusOK, RelationActionResp{
 			Response{
 				StatusCode: -1,
-				StatusMsg:  "用户id格式错误",
+				StatusMsg:  "请求参数格式错误",
 			},
 		})
 		return
@@ -50,7 +51,7 @@ func RelationAction(c *gin.Context) {
 	case 2 == actionType:
 		go fsi.DeleteFollowRelation(userId, toUserId)
 	}
-	c.JSON(http.StatusOK, Response{StatusCode: 0})
+	c.JSON(http.StatusOK, Response{StatusCode: 0, StatusMsg: "操作成功"})
 	//} else {
 	//	c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
 	//}

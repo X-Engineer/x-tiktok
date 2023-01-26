@@ -102,7 +102,7 @@ func (*FollowDao) InsertFollowRelation(userId int64, targetId int64) (bool, erro
 		CreatedAt:   time.Now().Format("2006-01-02 15:04:05"),
 	}
 	//
-	err := Db.Select("UserId", "FollowingId", "Followed", "CreateAt").Create(&follow).Error
+	err := Db.Select("UserId", "FollowingId", "Followed", "CreatedAt").Create(&follow).Error
 	// 插入失败，返回err.
 	if nil != err {
 		log.Println(err.Error())
