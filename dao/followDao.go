@@ -4,6 +4,7 @@ import (
 	"log"
 	"sync"
 	"time"
+	"x-tiktok/config"
 )
 
 type Follow struct {
@@ -66,7 +67,7 @@ func (*FollowDao) InsertFollowRelation(userId int64, targetId int64) (bool, erro
 		UserId:      userId,
 		FollowingId: targetId,
 		Followed:    1,
-		CreatedAt:   time.Now().Format("2006-01-02 15:04:05"),
+		CreatedAt:   time.Now().Format(config.GO_STARTER_TIME),
 	}
 	// 插入用户与目标用户的关注记录
 	err := Db.Select("UserId", "FollowingId", "Followed", "CreateAt").Create(&follow).Error
