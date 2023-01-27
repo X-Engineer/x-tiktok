@@ -36,39 +36,6 @@ func NewFollowDaoInstance() *FollowDao {
 	return followDao
 }
 
-// GetFollowerCnt 给定当前用户id，查询relation表中该用户的粉丝数。
-func (*FollowDao) GetFollowerCnt(userId int64) (int64, error) {
-	// 用于存储当前用户粉丝数的变量
-	var cnt int64
-	// 当查询出现错误的情况，日志打印err msg，并返回err.
-	if err := Db.
-		Model(Follow{}).
-		Where("following_id = ?", userId).
-		Where("followed = ?", 0).
-		Count(&cnt).Error; nil != err {
-		log.Println(err.Error())
-		return 0, err
-	}
-	// 正常情况，返回取到的粉丝数。
-	return cnt, nil
-}
-
-// GetFollowingCnt 给定当前用户id，查询relation表中该用户关注了多少人。
-func (*FollowDao) GetFollowingCnt(userId int64) (int64, error) {
-	// 用于存储当前用户关注了多少人。
-	var cnt int64
-	// 查询出错，日志打印err msg，并return err
-	if err := Db.Model(Follow{}).
-		Where("user_id = ?", userId).
-		Where("followed = ?", 0).
-		Count(&cnt).Error; nil != err {
-		log.Println(err.Error())
-		return 0, err
-	}
-	// 查询成功，返回人数。
-	return cnt, nil
-}
-
 // FindEverFollowing 给定当前用户和目标用户id，查看曾经是否有关注关系。
 func (*FollowDao) FindEverFollowing(userId int64, targetId int64) (*Follow, error) {
 	// 用于存储查出来的关注关系。
@@ -148,4 +115,88 @@ func (*FollowDao) FindRelation(userId int64, targetId int64) (*Follow, error) {
 	}
 	//正常情况，返回取到的值和空err.
 	return &follow, nil
+}
+
+// GetFollowingsInfo 返回当前用户正在关注的用户信息列表，包括当前用户正在关注的用户ID列表和正在关注的用户总数
+func (*FollowDao) GetFollowingsInfo(userId int64) ([]int64, int64, error) {
+
+	var followingCnt int64
+	var followingId []int64
+
+	// user_id -> following_id
+	result := Db.Model(&Follow{}).Where("user_id = ?", userId).Where("followed = ?", 1).Pluck("following_id", &followingId)
+	followingCnt = result.RowsAffected
+
+	if nil != result.Error {
+		log.Println(result.Error.Error())
+		return nil, 0, result.Error
+	}
+
+	return followingId, followingCnt, nil
+
+}
+
+// GetFollowersInfo 返回当前用户的粉丝用户信息列表，包括当前用户的粉丝用户ID列表和粉丝总数
+func (*FollowDao) GetFollowersInfo(userId int64) ([]int64, int64, error) {
+
+	var followerCnt int64
+	var followerId []int64
+
+	// following_id -> user_id
+	result := Db.Model(&Follow{}).Where("following_id = ?", userId).Where("followed = ?", 1).Pluck("user_id", &followerId)
+	followerCnt = result.RowsAffected
+
+	if nil != result.Error {
+		log.Println(result.Error.Error())
+		return nil, 0, result.Error
+	}
+
+	return followerId, followerCnt, nil
+}
+
+// GetFollowingCnt 给定当前用户id，查询relation表中该用户关注了多少人。
+func (*FollowDao) GetFollowingCnt(userId int64) (int64, error) {
+	// 用于存储当前用户关注了多少人。
+	var cnt int64
+	// 查询出错，日志打印err msg，并return err
+	if err := Db.Model(Follow{}).
+		Where("user_id = ?", userId).
+		Where("followed = ?", 1).
+		Count(&cnt).Error; nil != err {
+		log.Println(err.Error())
+		return 0, err
+	}
+	// 查询成功，返回人数。
+	return cnt, nil
+}
+
+// GetFollowerCnt 给定当前用户id，查询relation表中该用户的粉丝数。
+func (*FollowDao) GetFollowerCnt(userId int64) (int64, error) {
+	// 用于存储当前用户粉丝数的变量
+	var cnt int64
+	// 当查询出现错误的情况，日志打印err msg，并返回err.
+	if err := Db.
+		Model(Follow{}).
+		Where("following_id = ?", userId).
+		Where("followed = ?", 1).
+		Count(&cnt).Error; nil != err {
+		log.Println(err.Error())
+		return 0, err
+	}
+	// 正常情况，返回取到的粉丝数。
+	return cnt, nil
+}
+
+// GetUserName 在user表中根据id查询用户姓名，放在followDao文件中并不妥当，后续可能废弃
+func (*FollowDao) GetUserName(userId int64) (string, error) {
+	var name string
+
+	err := Db.Table("user").Where("id = ?", userId).Pluck("name", &name).Error
+
+	if nil != err {
+		log.Println(err.Error())
+		return "", err
+	}
+
+	return name, nil
 }
