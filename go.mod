@@ -6,6 +6,7 @@ require (
 	github.com/gavv/httpexpect/v2 v2.8.0
 	github.com/gin-gonic/gin v1.8.2
 	github.com/stretchr/testify v1.8.1
+	gorm.io/driver/mysql v1.4.5
 	gorm.io/gorm v1.24.3
 )
 
@@ -52,6 +53,5 @@ require (
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gorm.io/driver/mysql v1.4.5 // indirect
 	moul.io/http2curl/v2 v2.3.0 // indirect
 )
