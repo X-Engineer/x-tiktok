@@ -59,6 +59,7 @@ func GetVideosByUserId(userId int64) ([]Video, error) {
 func GetVideosByLatestTime(latestTime time.Time) ([]Video, error) {
 	videos := make([]Video, config.VIDEO_NUM_PER_REFRESH)
 	result := Db.Where("created_at <= ?", latestTime).
+		Order("created_at desc").
 		Limit(config.VIDEO_NUM_PER_REFRESH).
 		Find(&videos)
 	if result.Error != nil {

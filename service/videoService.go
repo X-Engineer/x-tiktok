@@ -2,6 +2,7 @@ package service
 
 import (
 	"mime/multipart"
+	"time"
 	"x-tiktok/dao"
 )
 
@@ -11,10 +12,13 @@ type Video struct {
 	Author        User  `json:"author"`
 	FavoriteCount int64 `json:"favorite_count"`
 	CommentCount  int64 `json:"comment_count"`
-	IsFavorite    int64 `json:"is_favorite"`
+	IsFavorite    bool  `json:"is_favorite"`
 }
 
 type VideoService interface {
 	// Publish 将传入的视频流保存到 OSS 中，并在数据库中添加记录
 	Publish(data *multipart.FileHeader, title string, userId int64) error
+
+	// Feed 通过传入时间，当前用户的id，返回对应的返回视频流，以及视频流中最早的视频投稿时间
+	Feed(latestTime time.Time, userId int64) ([]Video, time.Time, error)
 }
