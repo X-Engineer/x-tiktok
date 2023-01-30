@@ -3,8 +3,9 @@ package controller
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
-	"path/filepath"
+	"x-tiktok/service"
 )
 
 type VideoListResponse struct {
@@ -15,11 +16,11 @@ type VideoListResponse struct {
 // Publish check token then save upload file to public directory
 func Publish(c *gin.Context) {
 	token := c.PostForm("token")
-
-	if _, exist := usersLoginInfo[token]; !exist {
-		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
-		return
-	}
+	log.Println("token:", token)
+	//if _, exist := usersLoginInfo[token]; !exist {
+	//	c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
+	//	return
+	//}
 
 	data, err := c.FormFile("data")
 	if err != nil {
@@ -29,12 +30,13 @@ func Publish(c *gin.Context) {
 		})
 		return
 	}
-
-	filename := filepath.Base(data.Filename)
-	user := usersLoginInfo[token]
-	finalName := fmt.Sprintf("%d_%s", user.Id, filename)
-	saveFile := filepath.Join("./public/", finalName)
-	if err := c.SaveUploadedFile(data, saveFile); err != nil {
+	title := c.PostForm("title")
+	log.Printf("视频 title: %v\n", title)
+	videoService := service.GetVideoServiceInstance()
+	// 从 token 中获取 userId
+	err = videoService.Publish(data, title, 1)
+	if err != nil {
+		log.Println("上传文件失败")
 		c.JSON(http.StatusOK, Response{
 			StatusCode: 1,
 			StatusMsg:  err.Error(),
@@ -44,7 +46,7 @@ func Publish(c *gin.Context) {
 
 	c.JSON(http.StatusOK, Response{
 		StatusCode: 0,
-		StatusMsg:  finalName + " uploaded successfully",
+		StatusMsg:  fmt.Sprintf("《%s》视频上传成功", title),
 	})
 }
 
