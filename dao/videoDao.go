@@ -46,7 +46,7 @@ func UploadVideo(videoName string, authorId int64, videoTitle string) error {
 // GetVideosByUserId 根据用户 Id 获取该用户已发布的所有视频
 func GetVideosByUserId(userId int64) ([]Video, error) {
 	// 预定义容量，避免多次扩容
-	videos := make([]Video, config.VIDEO_INIT_NUM_PER_AUTHOR)
+	videos := make([]Video, 0, config.VIDEO_INIT_NUM_PER_AUTHOR)
 	result := Db.Where(&Video{AuthorId: userId}).Find(&videos)
 	if result.Error != nil {
 		log.Println("获取用户已发布视频失败！")

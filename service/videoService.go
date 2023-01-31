@@ -21,4 +21,7 @@ type VideoService interface {
 
 	// Feed 通过传入时间，当前用户的id，返回对应的返回视频流，以及视频流中最早的视频投稿时间
 	Feed(latestTime time.Time, userId int64) ([]Video, time.Time, error)
+
+	// PublishList 查询用户 userId 所发布的所有视频
+	PublishList(userId int64) ([]Video, error)
 }
