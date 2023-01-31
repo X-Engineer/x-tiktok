@@ -5,12 +5,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+	"strconv"
 	"x-tiktok/service"
 )
 
 type VideoListResponse struct {
 	Response
-	VideoList []Video `json:"video_list"`
+	VideoList []service.Video `json:"video_list"`
 }
 
 // Publish check token then save upload file to public directory
@@ -50,12 +51,34 @@ func Publish(c *gin.Context) {
 	})
 }
 
-// PublishList all users have same publish video list
+// PublishList 用户的视频发布列表，直接列出用户所有投稿过的视频
 func PublishList(c *gin.Context) {
+	//c.JSON(http.StatusOK, VideoListResponse{
+	//	Response: Response{
+	//		StatusCode: 0,
+	//	},
+	//	VideoList: DemoVideos,
+	//})
+
+	reqUserId := c.Query("user_id")
+	userId, _ := strconv.ParseInt(reqUserId, 10, 64)
+	log.Println("获取到用户 Id：", userId)
+	token := c.Query("token")
+	log.Println("获取到用户 token：", token)
+	videoService := service.GetVideoServiceInstance()
+	videos, err := videoService.PublishList(userId)
+	if err != nil {
+		c.JSON(http.StatusOK, FeedResponse{
+			Response:  Response{StatusCode: 1, StatusMsg: "获取用户视频发布列表失败!"},
+			VideoList: nil,
+		})
+		return
+	}
 	c.JSON(http.StatusOK, VideoListResponse{
 		Response: Response{
 			StatusCode: 0,
+			StatusMsg:  "获取用户发布的视频列表成功！",
 		},
-		VideoList: DemoVideos,
+		VideoList: videos,
 	})
 }

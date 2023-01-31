@@ -38,7 +38,9 @@ func Feed(c *gin.Context) {
 	videos, nextTime, err := videoService.Feed(convTime, userId)
 	if err != nil {
 		c.JSON(http.StatusOK, FeedResponse{
-			Response: Response{StatusCode: 1, StatusMsg: "刷新视频流失败"},
+			Response:  Response{StatusCode: 1, StatusMsg: "刷新视频流失败"},
+			VideoList: nil,
+			NextTime:  nextTime.Unix(),
 		})
 		return
 	}

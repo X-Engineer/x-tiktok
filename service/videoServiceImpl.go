@@ -55,10 +55,25 @@ func (videoService *VideoServiceImpl) Feed(latestTime time.Time, userId int64) (
 	}
 	err = videoService.getRespVideos(&videos, &plainVideos, userId)
 	if err != nil {
-		log.Println("combineVideo:", err)
+		log.Println("getRespVideos:", err)
 		return nil, time.Time{}, err
 	}
 	return videos, plainVideos[len(plainVideos)-1].CreatedAt, nil
+}
+
+func (videoService *VideoServiceImpl) PublishList(userId int64) ([]Video, error) {
+	videos := make([]Video, 0, config.VIDEO_INIT_NUM_PER_AUTHOR)
+	plainVideos, err := dao.GetVideosByUserId(userId)
+	if err != nil {
+		log.Println("GetVideosByUserId:", err)
+		return nil, err
+	}
+	err = videoService.getRespVideos(&videos, &plainVideos, userId)
+	if err != nil {
+		log.Println("getRespVideos:", err)
+		return nil, err
+	}
+	return videos, nil
 }
 
 func UploadVideoToOSS(file *multipart.FileHeader, videoName string) error {
