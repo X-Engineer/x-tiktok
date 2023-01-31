@@ -7,11 +7,13 @@ import (
 	"log"
 	"mime/multipart"
 	"sync"
+	"time"
 	"x-tiktok/config"
 	"x-tiktok/dao"
 )
 
 type VideoServiceImpl struct {
+	UserService
 }
 
 var (
@@ -22,7 +24,9 @@ var (
 // GetVideoServiceInstance Go 单例模式：https://www.liwenzhou.com/posts/Go/singleton/
 func GetVideoServiceInstance() *VideoServiceImpl {
 	videoServiceOnce.Do(func() {
-		videoServiceImp = &VideoServiceImpl{}
+		videoServiceImp = &VideoServiceImpl{
+			UserService: &UserServiceImpl{},
+		}
 	})
 	return videoServiceImp
 }
@@ -40,6 +44,21 @@ func (videoService *VideoServiceImpl) Publish(data *multipart.FileHeader, title 
 		return err
 	}
 	return nil
+}
+
+func (videoService *VideoServiceImpl) Feed(latestTime time.Time, userId int64) ([]Video, time.Time, error) {
+	videos := make([]Video, 0, config.VIDEO_NUM_PER_REFRESH)
+	plainVideos, err := dao.GetVideosByLatestTime(latestTime)
+	if err != nil {
+		log.Println("GetVideosByLatestTime:", err)
+		return nil, time.Time{}, err
+	}
+	err = videoService.getRespVideos(&videos, &plainVideos, userId)
+	if err != nil {
+		log.Println("combineVideo:", err)
+		return nil, time.Time{}, err
+	}
+	return videos, plainVideos[len(plainVideos)-1].CreatedAt, nil
 }
 
 func UploadVideoToOSS(file *multipart.FileHeader, videoName string) error {
@@ -70,5 +89,55 @@ func UploadVideoToOSS(file *multipart.FileHeader, videoName string) error {
 		fmt.Println("Error:", err)
 		return err
 	}
+	return nil
+}
+
+func (videoService *VideoServiceImpl) getRespVideos(videos *[]Video, plainVideos *[]dao.Video, userId int64) error {
+	for _, tmpVideo := range *plainVideos {
+		var video Video
+		videoService.combineVideo(&video, &tmpVideo, userId)
+		*videos = append(*videos, video)
+	}
+	return nil
+}
+
+// 组装 controller 层所需的 Video 结构
+func (videoService *VideoServiceImpl) combineVideo(video *Video, plainVideo *dao.Video, userId int64) error {
+	// 建立协程组，确保所有协程的任务完成后才退出本方法
+	var wg sync.WaitGroup
+	wg.Add(4)
+	video.Video = *plainVideo
+	// 视频作者信息
+	go func(v *Video) {
+		user, err := videoService.GetUserLoginInfoById(video.AuthorId)
+		if err != nil {
+			return
+		}
+		v.Author = user
+		wg.Done()
+	}(video)
+
+	// 视频点赞数量
+	go func(v *Video) {
+		// 等待点赞服务，获取视频点赞量
+		v.FavoriteCount = 10
+		wg.Done()
+	}(video)
+
+	// 视频评论数量
+	go func(v *Video) {
+		// 等待评论服务，获取视频评论量
+		v.CommentCount = 10
+		wg.Done()
+	}(video)
+
+	// 当前登录用户/游客是否对该视频点过赞
+	go func(v *Video) {
+		// 等待点赞服务，获取是否点赞
+		v.IsFavorite = false
+		wg.Done()
+	}(video)
+
+	wg.Wait()
 	return nil
 }
