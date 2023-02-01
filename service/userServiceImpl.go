@@ -9,6 +9,9 @@ import (
 )
 
 type UserServiceImpl struct {
+	// 关注服务
+	FollowService
+	// 点赞服务
 
 }
 
@@ -23,8 +26,6 @@ func (usi *UserServiceImpl) GetUserBasicInfoById(id int64) dao.UserBasicInfo {
 	return user
 }
 
-
-
 func (usi *UserServiceImpl) GetUserBasicInfoByName(name string) dao.UserBasicInfo {
 	user, err := dao.GetUserBasicInfoByName(name)
 	if err != nil {
@@ -38,20 +39,20 @@ func (usi *UserServiceImpl) GetUserBasicInfoByName(name string) dao.UserBasicInf
 
 func (usi *UserServiceImpl) InsertUser(user *dao.UserBasicInfo) bool {
 	flag := dao.InsertUser(user)
-	if flag == false{
+	if flag == false {
 		log.Println("Insert Fail!")
 		return false
 	}
 	return true
 }
 
-func (usi *UserServiceImpl) GetUserLoginInfoById(id int64) (User,error) {
+func (usi *UserServiceImpl) GetUserLoginInfoById(id int64) (User, error) {
 	user := User{
-		Id:             5,
-		Name:           "qcj",
-		FollowCount:    1,
-		FollowerCount:  99999,
-		IsFollow:       false,
+		Id:            5,
+		Name:          "qcj",
+		FollowCount:   1,
+		FollowerCount: 99999,
+		IsFollow:      false,
 	}
 	u, err := dao.GetUserBasicInfoById(id)
 	if err != nil {
@@ -66,11 +67,11 @@ func (usi *UserServiceImpl) GetUserLoginInfoById(id int64) (User,error) {
 
 	// 计算喜欢数
 	user = User{
-		Id:             u.Id,
-		Name:           u.Name,
-		FollowCount:    1,
-		FollowerCount:  99999,
-		IsFollow:       false,
+		Id:            u.Id,
+		Name:          u.Name,
+		FollowCount:   1,
+		FollowerCount: 99999,
+		IsFollow:      false,
 	}
 
 	return user, nil
@@ -79,12 +80,10 @@ func (usi *UserServiceImpl) GetUserLoginInfoById(id int64) (User,error) {
 // 给密码加密
 
 func EnCoder(password string) string {
-	h := hmac.New(sha256.New,[]byte(password))
+	h := hmac.New(sha256.New, []byte(password))
 	sha := hex.EncodeToString(h.Sum(nil))
 	return sha
 }
 
-func GenerateToken(username string) string {
-	return "1234567"
-}
+
 
