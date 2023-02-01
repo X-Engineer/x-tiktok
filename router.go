@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"x-tiktok/controller"
+	"x-tiktok/middleware/jwt"
 )
 
 func initRouter(r *gin.Engine) {
@@ -12,7 +13,7 @@ func initRouter(r *gin.Engine) {
 
 	// 基础接口
 	apiRouter.GET("/feed/", controller.Feed)
-	apiRouter.GET("/user/", controller.UserInfo)
+	apiRouter.GET("/user/", jwt.Auth(), controller.UserInfo)
 	apiRouter.POST("/user/register/", controller.Register)
 	apiRouter.POST("/user/login/", controller.Login)
 	apiRouter.POST("/publish/action/", controller.Publish)
@@ -31,4 +32,7 @@ func initRouter(r *gin.Engine) {
 	apiRouter.GET("/relation/friend/list/", controller.FriendList)
 	apiRouter.GET("/message/chat/", controller.MessageChat)
 	apiRouter.POST("/message/action/", controller.MessageAction)
+
+	// 测试接口
+	apiRouter.POST("/test/", jwt.Auth(), controller.Test)
 }

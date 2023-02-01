@@ -3,11 +3,11 @@ package controller
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"log"
 	"net/http"
 	"strconv"
 	"x-tiktok/dao"
 	"x-tiktok/service"
+	"x-tiktok/util"
 )
 
 // usersLoginInfo use map to store user info, and key is username+password for demo
@@ -36,21 +36,18 @@ type UserResponse struct {
 	User User `json:"user"`
 }
 
-
 func Register(c *gin.Context) {
 	username := c.Query("username")
 	password := c.Query("password")
-	fmt.Println(username,password)
-
 	usi := service.UserServiceImpl{}
 	user := usi.GetUserBasicInfoByName(username)
-	if username == user.Name{
+	if username == user.Name {
 		c.JSON(http.StatusOK, UserLoginResponse{
 			Response: Response{StatusCode: 1, StatusMsg: "User already exist"},
 		})
-	}else {
+	} else {
 		newUser := dao.UserBasicInfo{
-			Name: username,
+			Name:     username,
 			Password: service.EnCoder(password),
 		}
 		if usi.InsertUser(&newUser) != true {
@@ -58,10 +55,12 @@ func Register(c *gin.Context) {
 		}
 		// 得到用户id
 		user := usi.GetUserBasicInfoByName(username)
-		token := service.GenerateToken(username)
-		log.Println("注册返回的id: ", user.Id)
+		userId := user.Id
+		token := util.GenerateToken(userId, username)
+		//log.Println("注册时返回的token", token)
+		//log.Println("注册返回的id: ", user.Id)
 		c.JSON(http.StatusOK, UserLoginResponse{
-			Response: Response{StatusCode: 0},
+			Response: Response{StatusCode: 0, StatusMsg: "Register Success"},
 			UserId:   user.Id,
 			Token:    token,
 		})
@@ -72,20 +71,21 @@ func Login(c *gin.Context) {
 	username := c.Query("username")
 	password := c.Query("password")
 	encoderPassword := service.EnCoder(password)
-	log.Println("encoderPassword:", encoderPassword)
+	//log.Println("encoderPassword:", encoderPassword)
 	// 登录逻辑：使用jwt，根据用户信息生成token
 	usi := service.UserServiceImpl{}
 
 	user := usi.GetUserBasicInfoByName(username)
-
+	userId := user.Id
 	if encoderPassword == user.Password {
-		token := service.GenerateToken(username)
+		token := util.GenerateToken(userId, username)
+		//log.Println("generate token:", token)
 		c.JSON(http.StatusOK, UserLoginResponse{
-			Response: Response{StatusCode: 0},
-			UserId: user.Id,
-			Token: token,
+			Response: Response{StatusCode: 0, StatusMsg: "Login Success"},
+			UserId:   user.Id,
+			Token:    token,
 		})
-	}else {
+	} else {
 		c.JSON(http.StatusOK, UserResponse{
 			Response: Response{StatusCode: 1, StatusMsg: "User or Password Error"},
 		})
@@ -94,17 +94,24 @@ func Login(c *gin.Context) {
 
 func UserInfo(c *gin.Context) {
 	userId := c.Query("user_id")
-	// token做权限校验
+	// 使用中间件，做token权限校验
 	usi := service.UserServiceImpl{}
 	id, _ := strconv.ParseInt(userId, 10, 64)
-	if user, err := usi.GetUserLoginInfoById(id); err!= nil {
+	if user, err := usi.GetUserLoginInfoById(id); err != nil {
 		c.JSON(http.StatusOK, UserResponse{
 			Response: Response{StatusCode: 1, StatusMsg: "User doesn't exist"},
 		})
 	} else {
 		c.JSON(http.StatusOK, UserResponse{
-			Response: Response{StatusCode: 0},
-			User: User(user),
+			Response: Response{StatusCode: 0, StatusMsg: "Query Success"},
+			User:     User(user),
 		})
 	}
+}
+
+func Test(c *gin.Context) {
+	// 通过c.Get()获取userId
+	userId, _ := c.Get("userId")
+	//fmt.Println("userId", userId)
+	c.JSON(http.StatusOK, userId)
 }
