@@ -1,6 +1,5 @@
 package service
 
-
 type FollowService interface {
 
 	// AddFollowRelation 当前用户关注目标用户
@@ -11,4 +10,6 @@ type FollowService interface {
 	GetFollowings(userId int64) ([]User, error)
 	// GetFollowers 获取当前用户的粉丝列表
 	GetFollowers(userId int64) ([]User, error)
+	// GetFriends 获取粉丝
+	GetFriends(userId int64) ([]User, error)
 }
