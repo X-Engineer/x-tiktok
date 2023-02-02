@@ -176,3 +176,55 @@ func (*FollowServiceImp) GetFollowers(userId int64) ([]User, error) {
 	return userFollowers, nil
 
 }
+
+func (*FollowServiceImp) GetFriends(userId int64) ([]User, error) {
+	followDao := dao.NewFollowDaoInstance()
+
+	userFollowersId, userFollowersCnt, err := followDao.GetFollowersInfo(userId)
+
+	if nil != err {
+		log.Println(err.Error())
+	}
+
+	userFollowers := make([]User, userFollowersCnt)
+
+	for i := 0; int64(i) < userFollowersCnt; i++ {
+		userFollowers[i].Id = userFollowersId[i]
+
+		var err1 error
+		userFollowers[i].Name, err1 = followDao.GetUserName(userFollowersId[i])
+		if nil != err1 {
+			log.Println(err1.Error())
+			return nil, err1
+		}
+
+		var err2 error
+		userFollowers[i].FollowCount, err2 = followDao.GetFollowingCnt(userFollowersId[i])
+		if nil != err2 {
+			log.Println(err2.Error())
+			return nil, err2
+		}
+
+		var err3 error
+		userFollowers[i].FollowerCount, err3 = followDao.GetFollowerCnt(userFollowersId[i])
+		if nil != err3 {
+			log.Println(err3.Error())
+			return nil, err3
+		}
+
+		isFollowResult, err4 := followDao.FindEverFollowing(userId, userFollowersId[i])
+		if nil != err4 {
+			log.Println(err4.Error())
+			return nil, err4
+		}
+
+		if nil != isFollowResult && isFollowResult.Followed == 1 {
+			userFollowers[i].IsFollow = true
+		} else {
+			userFollowers[i].IsFollow = false
+		}
+
+	}
+
+	return userFollowers, nil
+}
