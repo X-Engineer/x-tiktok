@@ -70,7 +70,7 @@ func (*FollowDao) InsertFollowRelation(userId int64, targetId int64) (bool, erro
 		CreatedAt:   time.Now().Format(config.GO_STARTER_TIME),
 	}
 	// 插入用户与目标用户的关注记录
-	err := Db.Select("UserId", "FollowingId", "Followed", "CreateAt").Create(&follow).Error
+	err := Db.Select("UserId", "FollowingId", "Followed", "CreatedAt").Create(&follow).Error
 	// 插入失败，返回err.
 	if nil != err {
 		log.Println(err.Error())
@@ -97,25 +97,25 @@ func (*FollowDao) UpdateFollowRelation(userId int64, targetId int64, followed in
 	return true, nil
 }
 
-// FindRelation 给定当前用户和目标用户id，查询relation表中相应的记录。   ！当前函数未使用，使用版本是FindEverFollowing !
-func (*FollowDao) FindRelation(userId int64, targetId int64) (*Follow, error) {
+// FindFollowRelation 给定当前用户和目标用户id，查询relation表是否存在关注关系
+func (*FollowDao) FindFollowRelation(userId int64, targetId int64) (bool, error) {
 	// follow变量用于后续存储数据库查出来的用户关系。
 	follow := Follow{}
 	//当查询出现错误时，日志打印err msg，并return err.
 	if err := Db.
 		Where("user_id = ?", userId).
 		Where("following_id = ?", targetId).
-		Where("followed = ?", 0).
+		Where("followed = ?", 1).
 		Take(&follow).Error; nil != err {
 		// 当没查到数据时，gorm也会报错。
 		if "record not found" == err.Error() {
-			return nil, nil
+			return false, nil
 		}
 		log.Println(err.Error())
-		return nil, err
+		return false, err
 	}
 	//正常情况，返回取到的值和空err.
-	return &follow, nil
+	return true, nil
 }
 
 // GetFollowingsInfo 返回当前用户正在关注的用户信息列表，包括当前用户正在关注的用户ID列表和正在关注的用户总数

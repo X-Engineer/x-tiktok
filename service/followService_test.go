@@ -23,3 +23,27 @@ func TestFollowServiceImp_GetFollowers(t *testing.T) {
 	}
 	fmt.Println(followers)
 }
+
+func TestFollowServiceImp_GetFollowingCnt(t *testing.T) {
+	userIdCnt, err := followServiceImp.GetFollowingCnt(2)
+	if err != nil {
+		log.Default()
+	}
+	fmt.Println(userIdCnt)
+}
+
+func TestFollowServiceImp_GetFollowerCnt(t *testing.T) {
+	userIdCnt, err := followServiceImp.GetFollowerCnt(2)
+	if err != nil {
+		log.Default()
+	}
+	fmt.Println(userIdCnt)
+}
+
+func TestFollowServiceImp_CheckIsFollowing(t *testing.T) {
+	result, err := followServiceImp.CheckIsFollowing(11, 2)
+	if err != nil {
+		log.Default()
+	}
+	fmt.Println(result)
+}

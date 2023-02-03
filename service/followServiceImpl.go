@@ -228,3 +228,21 @@ func (*FollowServiceImp) GetFriends(userId int64) ([]User, error) {
 
 	return userFollowers, nil
 }
+
+// GetFollowingCnt 根据用户id查询关注数
+func (*FollowServiceImp) GetFollowingCnt(userId int64) (int64, error) {
+	followDao := dao.NewFollowDaoInstance()
+	return followDao.GetFollowingCnt(userId)
+}
+
+// GetFollowerCnt 根据用户id查询粉丝数
+func (*FollowServiceImp) GetFollowerCnt(userId int64) (int64, error) {
+	followDao := dao.NewFollowDaoInstance()
+	return followDao.GetFollowerCnt(userId)
+}
+
+// CheckIsFollowing 判断当前登录用户是否关注了目标用户
+func (*FollowServiceImp) CheckIsFollowing(userId int64, targetId int64) (bool, error) {
+	followDao := dao.NewFollowDaoInstance()
+	return followDao.FindFollowRelation(userId, targetId)
+}

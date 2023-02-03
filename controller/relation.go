@@ -67,7 +67,6 @@ func FollowList(c *gin.Context) {
 	userId, err := strconv.ParseInt(c.Query("user_id"), 10, 64)
 
 	fmt.Println(userId)
-
 	if err != nil {
 		fmt.Printf("fail")
 		c.JSON(http.StatusOK, UserListResponse{
