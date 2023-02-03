@@ -18,3 +18,9 @@ const (
 	PLAY_URL_PREFIX       = CUSTOM_DOMAIN + OSS_VIDEO_DIR
 	COVER_URL_SUFFIX      = "?x-oss-process=video/snapshot,t_2000,m_fast"
 )
+<<<<<<< Updated upstream
+=======
+
+const LIKE = 1
+const UNLIKE = 0
+>>>>>>> Stashed changes
