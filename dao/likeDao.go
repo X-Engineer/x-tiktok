@@ -3,6 +3,7 @@ package dao
 import (
 	"errors"
 	"log"
+	"time"
 )
 
 type Like struct {
@@ -10,12 +11,12 @@ type Like struct {
 	UserId    int64
 	VideoId   int64
 	Liked     int8
-	CreatedAt string
-	UpdatedAt string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (Like) TableName() string {
-	return "likes"
+	return "like"
 }
 
 // 增删改查
@@ -46,10 +47,11 @@ func VideoLikedCount(videoId int64) (int64, error) {
 
 // 更新点赞数据
 func UpdateLikeInfo(userId int64, videoId int64, liked int8) error {
-	err := Db.Model(Like{}).Where("user_id=?,video_id=?", userId, videoId).Update("liked", liked)
+	err := Db.Model(Like{}).Where(map[string]interface{}{"user_id": userId, "video_id": videoId}).Update("liked", liked).Error
+
 	if err != nil {
-		log.Println("LikeDao-UpdateLikeInfo: return update likes failed") //函数返回提示错误信息
-		return errors.New("update likes failed")
+		log.Println(err.Error) //函数返回提示错误信息
+		return errors.New("update like failed")
 	}
 	log.Println("LikeDao-UpdateLikeInfo: return success") //函数执行成功，返回正确信息
 	return nil
@@ -66,36 +68,34 @@ func InsertLikeInfo(like Like) error {
 }
 
 // 获取视频点赞信息（当前用户是否点赞）
-func GetVideoLikedByUser(userId int64, videoId int64) (int8, error) {
+func IsVideoLikedByUser(userId int64, videoId int64) (int8, error) {
 	var isLiked int8
-	err := Db.Model(Like{}).Where(map[string]interface{}{"user_id": userId, "video_id": videoId}).Pluck("liked", isLiked).Error
-	if err != nil {
-		if "record not found" == err.Error() {
-			log.Println("can't find data")
-			return -1, nil
-		} else {
-			//如果查询数据库失败，返回获取likeInfo信息失败
-			log.Println(err.Error())
-			return isLiked, errors.New("get likeInfo failed")
-		}
+	result := Db.Model(Like{}).Where("user_id= ?", userId).Where("video_id= ?", videoId).Pluck("liked", &isLiked)
+	c := result.RowsAffected
+	if result.Error != nil {
+		//if "record not found" == err.Error() {
+		//	log.Println("can't find data")
+		//	return -1, nil
+		//} else {
+		//如果查询数据库失败，返回获取likeInfo信息失败
+		log.Println(result.Error.Error())
+		return isLiked, errors.New("get likeInfo failed")
+		//}
+	} else if c == 0 {
+		return -1, errors.New("record not found")
 	}
 	return isLiked, nil
 }
 
-//
-//func GetLikeInfo(userId int64) ([]int64, int64, error) {
-//
-//	var likeCnt int64
-//	var videoId []int64
-//
-//	// following_id -> user_id
-//	result := Db.Model(&Like{}).Where("user_id = ?", userId).Where("liked = ?", 1).Pluck("video_id", &videoId)
-//	likeCnt = result.RowsAffected
-//
-//	if nil != result.Error {
-//		log.Println(result.Error.Error())
-//		return nil, 0, result.Error
-//	}
-//
-//	return videoId, likeCnt, nil
-//}
+// 获取用户点赞数
+func GetLikeCountByUser(userId int64) (int64, error) {
+	var count int64
+	//数据库中查询点赞数量
+	err := Db.Model(Like{}).Where(map[string]interface{}{"user_id": userId, "liked": 1}).Count(&count).Error
+	if err != nil {
+		log.Println("LikeDao-Count: return count failed") //函数返回提示错误信息
+		return -1, errors.New("find likes count failed")
+	}
+	log.Println("LikeDao-Count: return count success") //函数执行成功，返回正确信息
+	return count, nil
+}
