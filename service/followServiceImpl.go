@@ -32,7 +32,7 @@ func NewFSIInstance() *FollowServiceImp {
 }
 
 // FollowAction 关注操作的业务
-func (*FollowServiceImp) FollowAction(userId int64, targetId int64) (bool, error) {
+func (followService *FollowServiceImp) FollowAction(userId int64, targetId int64) (bool, error) {
 	followDao := dao.NewFollowDaoInstance()
 	follow, err := followDao.FindEverFollowing(userId, targetId)
 	// 寻找SQL 出错。
@@ -60,7 +60,7 @@ func (*FollowServiceImp) FollowAction(userId int64, targetId int64) (bool, error
 }
 
 // CancelFollowAction 取关操作的业务
-func (*FollowServiceImp) CancelFollowAction(userId int64, targetId int64) (bool, error) {
+func (followService *FollowServiceImp) CancelFollowAction(userId int64, targetId int64) (bool, error) {
 	followDao := dao.NewFollowDaoInstance()
 	follow, err := followDao.FindEverFollowing(userId, targetId)
 	// 寻找 SQL 出错。
@@ -82,7 +82,7 @@ func (*FollowServiceImp) CancelFollowAction(userId int64, targetId int64) (bool,
 }
 
 // GetFollowings 获取正在关注的用户详情列表业务
-func (*FollowServiceImp) GetFollowings(userId int64) ([]User, error) {
+func (followService *FollowServiceImp) GetFollowings(userId int64) ([]User, error) {
 	followDao := dao.NewFollowDaoInstance()
 
 	userFollowingsId, userFollowingsCnt, err := followDao.GetFollowingsInfo(userId)
@@ -124,7 +124,7 @@ func (*FollowServiceImp) GetFollowings(userId int64) ([]User, error) {
 }
 
 // GetFollowers 获取粉丝详情列表业务
-func (*FollowServiceImp) GetFollowers(userId int64) ([]User, error) {
+func (followService *FollowServiceImp) GetFollowers(userId int64) ([]User, error) {
 	followDao := dao.NewFollowDaoInstance()
 
 	userFollowersId, userFollowersCnt, err := followDao.GetFollowersInfo(userId)
@@ -177,72 +177,48 @@ func (*FollowServiceImp) GetFollowers(userId int64) ([]User, error) {
 
 }
 
-func (*FollowServiceImp) GetFriends(userId int64) ([]User, error) {
+// GetFriends 获取用户好友列表（附带与其最新聊天记录）
+func (followService *FollowServiceImp) GetFriends(userId int64) ([]FriendUser, error) {
 	followDao := dao.NewFollowDaoInstance()
-
-	userFollowersId, userFollowersCnt, err := followDao.GetFollowersInfo(userId)
-
-	if nil != err {
+	userFriendId, userFriendCnt, err := followDao.GetFollowingsInfo(userId)
+	if err != nil {
 		log.Println(err.Error())
+		return nil, err
 	}
 
-	userFollowers := make([]User, userFollowersCnt)
+	userFriends := make([]FriendUser, userFriendCnt)
 
-	for i := 0; int64(i) < userFollowersCnt; i++ {
-		userFollowers[i].Id = userFollowersId[i]
-
-		var err1 error
-		userFollowers[i].Name, err1 = followDao.GetUserName(userFollowersId[i])
-		if nil != err1 {
-			log.Println(err1.Error())
-			return nil, err1
-		}
-
-		var err2 error
-		userFollowers[i].FollowCount, err2 = followDao.GetFollowingCnt(userFollowersId[i])
-		if nil != err2 {
-			log.Println(err2.Error())
-			return nil, err2
-		}
-
-		var err3 error
-		userFollowers[i].FollowerCount, err3 = followDao.GetFollowerCnt(userFollowersId[i])
-		if nil != err3 {
-			log.Println(err3.Error())
-			return nil, err3
-		}
-
-		isFollowResult, err4 := followDao.FindEverFollowing(userId, userFollowersId[i])
-		if nil != err4 {
-			log.Println(err4.Error())
-			return nil, err4
-		}
-
-		if nil != isFollowResult && isFollowResult.Followed == 1 {
-			userFollowers[i].IsFollow = true
-		} else {
-			userFollowers[i].IsFollow = false
-		}
-
+	userFollowings, err1 := followService.GetFollowings(userId)
+	if err1 != nil {
+		log.Println(err1.Error())
+		return nil, err1
 	}
+	for i := 0; int64(i) < userFriendCnt; i++ {
+		userFriends[i].user = userFollowings[i]
 
-	return userFollowers, nil
+		// 等待赋值中！
+		userFriends[i].Avatar = ""
+		// 传入当前登陆用户id-userId和好友id-userFriendsId 得到最新聊天消息及其类型
+		userFriends[i].Message = ""
+		userFriends[i].MsgType = 0
+	}
+	return userFriends, nil
 }
 
 // GetFollowingCnt 根据用户id查询关注数
-func (*FollowServiceImp) GetFollowingCnt(userId int64) (int64, error) {
+func (followService *FollowServiceImp) GetFollowingCnt(userId int64) (int64, error) {
 	followDao := dao.NewFollowDaoInstance()
 	return followDao.GetFollowingCnt(userId)
 }
 
 // GetFollowerCnt 根据用户id查询粉丝数
-func (*FollowServiceImp) GetFollowerCnt(userId int64) (int64, error) {
+func (followService *FollowServiceImp) GetFollowerCnt(userId int64) (int64, error) {
 	followDao := dao.NewFollowDaoInstance()
 	return followDao.GetFollowerCnt(userId)
 }
 
 // CheckIsFollowing 判断当前登录用户是否关注了目标用户
-func (*FollowServiceImp) CheckIsFollowing(userId int64, targetId int64) (bool, error) {
+func (followService *FollowServiceImp) CheckIsFollowing(userId int64, targetId int64) (bool, error) {
 	followDao := dao.NewFollowDaoInstance()
 	return followDao.FindFollowRelation(userId, targetId)
 }

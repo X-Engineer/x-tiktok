@@ -19,6 +19,11 @@ type UserListResponse struct {
 	UserList []service.User `json:"user_list"`
 }
 
+type FriendUserListResponse struct {
+	Response
+	FriendUserList []service.FriendUser `json:"user_list"`
+}
+
 // RelationAction no practical effect, just check if token is valid
 func RelationAction(c *gin.Context) {
 	userId := c.GetInt64("userId")
@@ -151,7 +156,7 @@ func FriendList(c *gin.Context) {
 
 	if err != nil {
 		fmt.Printf("fail")
-		c.JSON(http.StatusOK, UserListResponse{
+		c.JSON(http.StatusOK, FriendUserListResponse{
 			Response{
 				StatusCode: -1,
 				StatusMsg:  "请求参数格式错误",
@@ -165,7 +170,7 @@ func FriendList(c *gin.Context) {
 	followers, err1 := fsi.GetFriends(userId)
 	if err1 != nil {
 		fmt.Printf("fail")
-		c.JSON(http.StatusOK, UserListResponse{
+		c.JSON(http.StatusOK, FriendUserListResponse{
 			Response{
 				StatusCode: -1,
 				StatusMsg:  "获取好友列表失败",
@@ -175,7 +180,7 @@ func FriendList(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, UserListResponse{
+	c.JSON(http.StatusOK, FriendUserListResponse{
 		Response{
 			StatusCode: 0,
 			StatusMsg:  "获取好友列表成功",

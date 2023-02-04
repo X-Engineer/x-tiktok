@@ -1,5 +1,12 @@
 package service
 
+type FriendUser struct {
+	user    User   `json:"user"`
+	Avatar  string `json:"avatar"`
+	Message string `json:"message,omitempty"`
+	MsgType int64  `json:"msg_type"`
+}
+
 type FollowService interface {
 
 	// FollowAction 当前用户关注目标用户
