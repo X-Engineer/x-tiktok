@@ -59,15 +59,16 @@ func (*LikeServiceImpl) FavoriteAction(userId int64, videoId int64, actionType i
 
 // 获取点赞信息
 func (*LikeServiceImpl) GetLikesList(userId int64) ([]int64, error) {
-	likelist, likeCnt, err := dao.GetLikeListByUserId(userId)
+	//likelist, likeCnt, err := dao.GetLikeListByUserId(userId)
+	likelist, _, err := dao.GetLikeListByUserId(userId)
 	if err != nil {
 		log.Print("Get like list failed!")
 		return nil, err
 	}
-	for i := 0; i < int(likeCnt); i++ {
-		//获取Video信息列表
-		//VideoService(.)
-	}
+	//for i := 0; i < int(likeCnt); i++ {
+	//	//获取Video信息列表
+	//	//VideoService(.)
+	//}
 	return likelist, nil
 }
 

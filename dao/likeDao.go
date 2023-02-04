@@ -20,7 +20,7 @@ func (Like) TableName() string {
 }
 
 // 增删改查
-// 获取当前用户点赞视频列表
+// 获取当前用户点赞视频id列表
 func GetLikeListByUserId(userId int64) ([]int64, int64, error) {
 	var LikedList []int64
 	result := Db.Model(&Like{}).Where("user_id=? and liked=?", userId, 1).Pluck("video_id", &LikedList)
@@ -73,10 +73,7 @@ func IsVideoLikedByUser(userId int64, videoId int64) (int8, error) {
 	result := Db.Model(Like{}).Where("user_id= ?", userId).Where("video_id= ?", videoId).Pluck("liked", &isLiked)
 	c := result.RowsAffected
 	if result.Error != nil {
-		//if "record not found" == err.Error() {
-		//	log.Println("can't find data")
-		//	return -1, nil
-		//} else {
+
 		//如果查询数据库失败，返回获取likeInfo信息失败
 		log.Println(result.Error.Error())
 		return isLiked, errors.New("get likeInfo failed")

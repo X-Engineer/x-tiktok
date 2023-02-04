@@ -20,8 +20,8 @@ func initRouter(r *gin.Engine) {
 	apiRouter.GET("/publish/list/", controller.PublishList)
 
 	// 互动接口
-	apiRouter.POST("/favorite/action/", controller.FavoriteAction)
-	apiRouter.GET("/favorite/list/", controller.FavoriteList)
+	apiRouter.POST("/favorite/action/", jwt.Auth(), controller.FavoriteAction)
+	apiRouter.GET("/favorite/list/", jwt.Auth(), controller.FavoriteList)
 	apiRouter.POST("/comment/action/", controller.CommentAction)
 	apiRouter.GET("/comment/list/", controller.CommentList)
 
