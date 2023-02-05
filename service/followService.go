@@ -1,7 +1,7 @@
 package service
 
 type FriendUser struct {
-	user    User   `json:"user"`
+	User
 	Avatar  string `json:"avatar"`
 	Message string `json:"message,omitempty"`
 	MsgType int64  `json:"msg_type"`

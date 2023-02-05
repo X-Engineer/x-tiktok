@@ -30,9 +30,9 @@ func RelationAction(c *gin.Context) {
 	//userId, err1 := strconv.ParseInt(c.Query("userId"), 10, 64)
 	toUserId, err2 := strconv.ParseInt(c.Query("to_user_id"), 10, 64)
 	actionType, err3 := strconv.ParseInt(c.Query("action_type"), 10, 64)
-	fmt.Println(userId)
-	fmt.Println(toUserId)
-	fmt.Println(actionType)
+	//fmt.Println(userId)
+	//fmt.Println(toUserId)
+	//fmt.Println(actionType)
 	// 传入参数格式有问题。
 	if nil != err2 || nil != err3 || actionType < 1 || actionType > 2 {
 		fmt.Printf("fail")

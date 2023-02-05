@@ -1,14 +1,17 @@
 package service
 
 import (
+	"fmt"
 	"log"
 	"sync"
+	"x-tiktok/config"
 	"x-tiktok/dao"
 )
 
 // FollowServiceImp 该结构体继承FollowService接口。
 type FollowServiceImp struct {
 	FollowService
+	//MessageService
 }
 
 var (
@@ -172,7 +175,6 @@ func (followService *FollowServiceImp) GetFollowers(userId int64) ([]User, error
 		}
 
 	}
-
 	return userFollowers, nil
 
 }
@@ -180,27 +182,40 @@ func (followService *FollowServiceImp) GetFollowers(userId int64) ([]User, error
 // GetFriends 获取用户好友列表（附带与其最新聊天记录）
 func (followService *FollowServiceImp) GetFriends(userId int64) ([]FriendUser, error) {
 	followDao := dao.NewFollowDaoInstance()
+	// 关注用户的id List和count
 	userFriendId, userFriendCnt, err := followDao.GetFollowingsInfo(userId)
 	if err != nil {
 		log.Println(err.Error())
 		return nil, err
 	}
-
-	userFriends := make([]FriendUser, userFriendCnt)
+	fmt.Print(userFriendId)
+	var userFriends []FriendUser
 
 	userFollowings, err1 := followService.GetFollowings(userId)
 	if err1 != nil {
 		log.Println(err1.Error())
 		return nil, err1
 	}
-	for i := 0; int64(i) < userFriendCnt; i++ {
-		userFriends[i].user = userFollowings[i]
 
-		// 等待赋值中！
-		userFriends[i].Avatar = ""
+	for i := 0; int64(i) < userFriendCnt; i++ {
+		var friendUserTemp FriendUser
+		//使用消息模块服务
+		msi := messageServiceImpl
+		messageInfo, err := msi.LatestMessage(userId, userFriendId[i])
+		//没有发生过聊天，不返回
+		if err != nil {
+			continue
+		}
+
+		friendUserTemp.Id = userFollowings[i].Id
+		friendUserTemp.Name = userFollowings[i].Name
+		friendUserTemp.FollowerCount = userFollowings[i].FollowerCount
+		friendUserTemp.FollowCount = userFollowings[i].FollowCount
+		friendUserTemp.Avatar = config.CUSTOM_DOMAIN + config.OSS_USER_AVATAR_DIR
 		// 传入当前登陆用户id-userId和好友id-userFriendsId 得到最新聊天消息及其类型
-		userFriends[i].Message = ""
-		userFriends[i].MsgType = 0
+		friendUserTemp.Message = messageInfo.message
+		friendUserTemp.MsgType = messageInfo.msgType
+		userFriends = append(userFriends, friendUserTemp)
 	}
 	return userFriends, nil
 }
