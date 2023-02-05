@@ -12,12 +12,12 @@ func initRouter(r *gin.Engine) {
 	apiRouter := r.Group("/douyin")
 
 	// 基础接口
-	apiRouter.GET("/feed/", controller.Feed)
+	apiRouter.GET("/feed/", jwt.AuthWithoutLogin(), controller.Feed)
 	apiRouter.GET("/user/", jwt.Auth(), controller.UserInfo)
 	apiRouter.POST("/user/register/", controller.Register)
 	apiRouter.POST("/user/login/", controller.Login)
-	apiRouter.POST("/publish/action/", controller.Publish)
-	apiRouter.GET("/publish/list/", controller.PublishList)
+	apiRouter.POST("/publish/action/", jwt.AuthBody(), controller.Publish)
+	apiRouter.GET("/publish/list/", jwt.Auth(), controller.PublishList)
 
 	// 互动接口
 	apiRouter.POST("/favorite/action/", controller.FavoriteAction)
@@ -30,8 +30,8 @@ func initRouter(r *gin.Engine) {
 	apiRouter.GET("/relation/follow/list/", jwt.Auth(), controller.FollowList)
 	apiRouter.GET("/relation/follower/list/", jwt.Auth(), controller.FollowerList)
 	apiRouter.GET("/relation/friend/list/", jwt.Auth(), controller.FriendList)
-	apiRouter.GET("/message/chat/", controller.MessageChat)
-	apiRouter.POST("/message/action/", controller.MessageAction)
+	apiRouter.GET("/message/chat/", jwt.Auth(), controller.MessageChat)
+	apiRouter.POST("/message/action/", jwt.Auth(), controller.MessageAction)
 
 	// 测试接口
 	apiRouter.POST("/test/", jwt.Auth(), controller.Test)

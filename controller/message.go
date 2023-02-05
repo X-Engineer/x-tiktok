@@ -1,69 +1,55 @@
 package controller
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 	"strconv"
-	"sync/atomic"
-	"time"
+	"x-tiktok/service"
 )
-
-var tempChat = map[string][]Message{}
-
-var messageIdSequence = int64(1)
 
 type ChatResponse struct {
 	Response
-	MessageList []Message `json:"message_list"`
+	MessageList []service.Message `json:"message_list"`
 }
 
-// MessageAction no practical effect, just check if token is valid
+// MessageAction 发送消息
 func MessageAction(c *gin.Context) {
-	token := c.Query("token")
 	toUserId := c.Query("to_user_id")
 	content := c.Query("content")
-
-	if user, exist := usersLoginInfo[token]; exist {
-		userIdB, _ := strconv.Atoi(toUserId)
-		chatKey := genChatKey(user.Id, int64(userIdB))
-
-		atomic.AddInt64(&messageIdSequence, 1)
-		curMessage := Message{
-			Id:         messageIdSequence,
-			Content:    content,
-			CreateTime: time.Now().Format(time.Kitchen),
-		}
-
-		if messages, exist := tempChat[chatKey]; exist {
-			tempChat[chatKey] = append(messages, curMessage)
-		} else {
-			tempChat[chatKey] = []Message{curMessage}
-		}
-		c.JSON(http.StatusOK, Response{StatusCode: 0})
-	} else {
-		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
+	actionType := c.Query("action_type")
+	loginUserId := c.GetInt64("userId")
+	targetUserId, err := strconv.ParseInt(toUserId, 10, 64)
+	targetActionType, err1 := strconv.ParseInt(actionType, 10, 64)
+	if err != nil || err1 != nil {
+		log.Println("toUserId/actionType 参数错误")
+		return
 	}
+	messageService := service.GetMessageServiceInstance()
+	err = messageService.SendMessage(loginUserId, targetUserId, content, targetActionType)
+	if err != nil {
+		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "Send Message 接口错误"})
+	}
+	c.JSON(http.StatusOK, Response{StatusCode: 0})
 }
 
-// MessageChat all users have same follow list
+// MessageChat 消息列表
 func MessageChat(c *gin.Context) {
-	token := c.Query("token")
+	loginUserId := c.GetInt64("userId")
 	toUserId := c.Query("to_user_id")
-
-	if user, exist := usersLoginInfo[token]; exist {
-		userIdB, _ := strconv.Atoi(toUserId)
-		chatKey := genChatKey(user.Id, int64(userIdB))
-
-		c.JSON(http.StatusOK, ChatResponse{Response: Response{StatusCode: 0}, MessageList: tempChat[chatKey]})
-	} else {
+	targetUserId, err := strconv.ParseInt(toUserId, 10, 64)
+	if err != nil {
+		log.Println("toUserId 参数错误")
+		return
+	}
+	//log.Println("loginUserId", loginUserId)
+	//log.Println("to_user_id:", toUserId)
+	messageService := service.GetMessageServiceInstance()
+	messages, err := messageService.MessageChat(loginUserId, targetUserId)
+	log.Println(messages)
+	if err != nil {
 		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
+	} else {
+		c.JSON(http.StatusOK, ChatResponse{Response: Response{StatusCode: 0}, MessageList: messages})
 	}
-}
-
-func genChatKey(userIdA int64, userIdB int64) string {
-	if userIdA > userIdB {
-		return fmt.Sprintf("%d_%d", userIdB, userIdA)
-	}
-	return fmt.Sprintf("%d_%d", userIdA, userIdB)
 }
