@@ -27,7 +27,8 @@ func NewLikeServImpInstance() *LikeServiceImpl {
 
 func (*LikeServiceImpl) FavoriteAction(userId int64, videoId int64, actionType int32) error {
 	islike, err := dao.IsVideoLikedByUser(userId, videoId)
-	log.Print(islike)
+	log.Print("islike:", islike)
+	log.Println("actionType:", actionType)
 	if err != nil {
 		if islike == -1 {
 			//用户没有点赞过该视频
