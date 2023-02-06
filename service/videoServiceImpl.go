@@ -14,6 +14,7 @@ import (
 
 type VideoServiceImpl struct {
 	UserService
+	LikeService
 }
 
 var (
@@ -26,6 +27,7 @@ func GetVideoServiceInstance() *VideoServiceImpl {
 	videoServiceOnce.Do(func() {
 		videoServiceImp = &VideoServiceImpl{
 			UserService: &UserServiceImpl{},
+			LikeService: &LikeServiceImpl{},
 		}
 	})
 	return videoServiceImp
@@ -124,7 +126,7 @@ func (videoService *VideoServiceImpl) combineVideo(video *Video, plainVideo *dao
 	video.Video = *plainVideo
 	// 视频作者信息
 	go func(v *Video) {
-		user, err := videoService.GetUserLoginInfoById(video.AuthorId)
+		user, err := videoService.GetUserLoginInfoById(v.AuthorId)
 		if err != nil {
 			return
 		}
@@ -135,7 +137,8 @@ func (videoService *VideoServiceImpl) combineVideo(video *Video, plainVideo *dao
 	// 视频点赞数量
 	go func(v *Video) {
 		// 等待点赞服务，获取视频点赞量
-		v.FavoriteCount = 10
+		videoLikedCount, _ := videoService.GetVideoLikeCount(v.Video.Id)
+		v.FavoriteCount = videoLikedCount
 		wg.Done()
 	}(video)
 
@@ -149,7 +152,8 @@ func (videoService *VideoServiceImpl) combineVideo(video *Video, plainVideo *dao
 	// 当前登录用户/游客是否对该视频点过赞
 	go func(v *Video) {
 		// 等待点赞服务，获取是否点赞
-		v.IsFavorite = false
+		isFavorite, _ := videoService.IsLikedByUser(userId, v.Id)
+		v.IsFavorite = isFavorite
 		wg.Done()
 	}(video)
 
