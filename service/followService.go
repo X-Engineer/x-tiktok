@@ -18,7 +18,7 @@ type FollowService interface {
 	// GetFollowers 获取当前用户的粉丝列表
 	GetFollowers(userId int64) ([]User, error)
 	// GetFriends 获取好友
-	GetFriends(userId int64) ([]User, error)
+	GetFriends(userId int64) ([]FriendUser, error)
 	// GetFollowingCnt 根据用户id查询关注数
 	GetFollowingCnt(userId int64) (int64, error)
 	// GetFollowerCnt 根据用户id查询粉丝数

@@ -15,24 +15,25 @@ func TestInsertLikeInfo(t *testing.T) {
 }
 
 func TestUpdateLikeInfo(t *testing.T) {
-	err := UpdateLikeInfo(152, 5, 1)
+	err := UpdateLikeInfo(5, 14, 1)
 	if err != nil {
-		return
+		log.Println(err)
 	}
 }
 
 func TestGetLikeListByUserId(t *testing.T) {
-	list, _, err := GetLikeListByUserId(152)
+	list, cnt, err := GetLikeListByUserId(5)
 	if err != nil {
 		log.Print(err.Error())
 	}
+	log.Println(cnt)
 	for _, v := range list {
 		fmt.Printf("%d\n", v)
 	}
 }
 
 func TestIsVideoLikedByUser(t *testing.T) {
-	islike, err := IsVideoLikedByUser(152, 5)
+	islike, err := IsVideoLikedByUser(5, 200)
 	if err != nil {
 		log.Print(err.Error())
 	}
@@ -40,7 +41,7 @@ func TestIsVideoLikedByUser(t *testing.T) {
 }
 
 func TestVideoLikedCount(t *testing.T) {
-	likeCnt, err := VideoLikedCount(9)
+	likeCnt, err := VideoLikedCount(20)
 	if err != nil {
 		log.Print(err.Error())
 	}
@@ -53,4 +54,12 @@ func TestGetLikeCountByUser(t *testing.T) {
 		log.Print(err.Error())
 	}
 	fmt.Printf("Like Count：%d\n", likeCnt)
+}
+
+func TestIsLikedByUser(t *testing.T) {
+	flag, err := IsLikedByUser(5, 23)
+	if err != nil {
+		log.Default()
+	}
+	log.Println(flag)
 }

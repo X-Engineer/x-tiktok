@@ -18,6 +18,7 @@ type VideoListResponse struct {
 func Publish(c *gin.Context) {
 	token := c.PostForm("token")
 	log.Println("token:", token)
+	userId := c.GetInt64("userId")
 	data, err := c.FormFile("data")
 	if err != nil {
 		c.JSON(http.StatusOK, Response{
@@ -30,7 +31,6 @@ func Publish(c *gin.Context) {
 	log.Printf("视频 title: %v\n", title)
 	videoService := service.GetVideoServiceInstance()
 	// 从 token 中获取 userId
-	userId := c.GetInt64("userId")
 	err = videoService.Publish(data, title, userId)
 	if err != nil {
 		log.Println("上传文件失败")
@@ -49,8 +49,10 @@ func Publish(c *gin.Context) {
 
 // PublishList 用户的视频发布列表，直接列出用户所有投稿过的视频
 func PublishList(c *gin.Context) {
+	// 获取到的userId，被访问的用户id
 	reqUserId := c.Query("user_id")
 	userId, _ := strconv.ParseInt(reqUserId, 10, 64)
+	//userId := c.GetInt64("userId")
 	log.Println("获取到用户 Id：", userId)
 	token := c.Query("token")
 	log.Println("获取到用户 token：", token)

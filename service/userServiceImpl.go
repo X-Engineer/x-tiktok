@@ -4,7 +4,9 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"log"
+	"sync"
 	"x-tiktok/dao"
 )
 
@@ -12,7 +14,25 @@ type UserServiceImpl struct {
 	// 关注服务
 	FollowService
 	// 点赞服务
+	LikeService
+	// 视频服务
+	VideoService
+}
 
+var (
+	userServiceImp  *UserServiceImpl
+	userServiceOnce sync.Once
+)
+
+func GetUserServiceInstance() *UserServiceImpl {
+	userServiceOnce.Do(func() {
+		userServiceImp = &UserServiceImpl{
+			FollowService: &FollowServiceImp{},
+			LikeService:   &LikeServiceImpl{},
+			VideoService:  &VideoServiceImpl{},
+		}
+	})
+	return userServiceImp
 }
 
 func (usi *UserServiceImpl) GetUserBasicInfoById(id int64) dao.UserBasicInfo {
@@ -46,34 +66,82 @@ func (usi *UserServiceImpl) InsertUser(user *dao.UserBasicInfo) bool {
 	return true
 }
 
+// GetUserLoginInfoById 未登录情况返回用户信息
 func (usi *UserServiceImpl) GetUserLoginInfoById(id int64) (User, error) {
 	user := User{
-		Id:            5,
-		Name:          "qcj",
-		FollowCount:   1,
-		FollowerCount: 99999,
-		IsFollow:      false,
+		Id:             5,
+		Name:           "qcj",
+		FollowCount:    1,
+		FollowerCount:  99999,
+		IsFollow:       false,
+		TotalFavorited: 10,
+		FavoriteCount:  10,
+		WorkCount:      8,
 	}
 	u, err := dao.GetUserBasicInfoById(id)
+	fmt.Println(u)
 	if err != nil {
 		log.Println("Err:", err.Error())
 		log.Println("User Not Found")
 	}
+	userService := GetUserServiceInstance()
 	// 计算关注数
-
+	followCnt, _ := userService.GetFollowingCnt(id)
 	// 计算粉丝数
-
+	followerCnt, _ := userService.GetFollowerCnt(id)
 	// 计算作品数
+	workCount, _ := userService.GetVideoCnt(id)
+	// 计算被点赞数, 找出用户被点赞的视频，循环求和:在likeservide实现
+	totalFavorited, _ := userService.GetUserLikedCnt(id)
+	// 计算喜欢数量
+	favoriteCount, _ := userService.GetUserLikeCount(id)
+	user = User{
+		Id:             u.Id,
+		Name:           u.Name,
+		FollowCount:    followCnt,
+		FollowerCount:  followerCnt,
+		IsFollow:       false,
+		TotalFavorited: totalFavorited,
+		FavoriteCount:  favoriteCount,
+		WorkCount:      workCount,
+	}
 
-	// 计算喜欢数
+	return user, nil
+}
+
+// GetUserLoginInfoByIdWithCurId 登录情况下返回用户信息, 第一个id是视频作者的id，第二个id是我们用户的id
+func (usi *UserServiceImpl) GetUserLoginInfoByIdWithCurId(id int64, curId int64) (User, error) {
+	user := User{
+		Id:             5,
+		Name:           "qcj",
+		FollowCount:    1,
+		FollowerCount:  99999,
+		IsFollow:       false,
+		TotalFavorited: 10,
+		FavoriteCount:  10,
+		WorkCount:      8,
+	}
+	u, err := dao.GetUserBasicInfoById(id)
+	fmt.Println(u)
+	if err != nil {
+		log.Println("Err:", err.Error())
+		log.Println("User Not Found")
+	}
+	userService := GetUserServiceInstance()
+	// 计算关注数
+	followCnt, _ := userService.GetFollowingCnt(id)
+	// 计算粉丝数
+	followerCnt, _ := userService.GetFollowerCnt(id)
+	// 计算是否关注, 这个地方又有点奇怪？只有在当前登录的情况下关注作者，后面该作者的视频才会显示已关注；退出重新登录就没了！
+	isFollow, _ := userService.CheckIsFollowing(curId, id)
+	// 这里不计算作品数量，一是用不到，二是避免用户和视频循环依赖
 	user = User{
 		Id:            u.Id,
 		Name:          u.Name,
-		FollowCount:   1,
-		FollowerCount: 99999,
-		IsFollow:      false,
+		FollowCount:   followCnt,
+		FollowerCount: followerCnt,
+		IsFollow:      isFollow,
 	}
-
 	return user, nil
 }
 
@@ -84,6 +152,3 @@ func EnCoder(password string) string {
 	sha := hex.EncodeToString(h.Sum(nil))
 	return sha
 }
-
-
-
