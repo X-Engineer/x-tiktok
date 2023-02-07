@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"fmt"
 	"log"
 	"testing"
 	"time"
@@ -36,5 +37,22 @@ func TestGetVideoByVideoId(t *testing.T) {
 	video, err := GetVideoByVideoId(1)
 	if err == nil {
 		log.Println(video)
+	}
+	// 耗时0.09s
+	for _, videoId := range []int64{15, 16, 17, 18, 19} {
+		video, _ := GetVideoByVideoId(videoId)
+		fmt.Println(video)
+	}
+}
+
+// 耗时0.02s
+func TestGetVideoListById(t *testing.T) {
+	videoList, err := GetVideoListById([]int64{15, 16, 17, 18, 19})
+	if err == nil {
+		log.Println(len(videoList))
+		//log.Println(videoList)
+	}
+	for _, video := range videoList {
+		fmt.Println(video)
 	}
 }

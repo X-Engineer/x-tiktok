@@ -13,8 +13,8 @@ func TestLikeServiceImpl_FavoriteAction(t *testing.T) {
 	}
 }
 
-func TestGetVideoLikeCount(t *testing.T) {
-	likeCnt, err := likeServiceImp.GetVideoLikeCount(5)
+func TestGetVideoLikedCount(t *testing.T) {
+	likeCnt, err := likeServiceImp.GetVideoLikedCount(20)
 	if err != nil {
 		log.Default()
 	}

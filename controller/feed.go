@@ -32,7 +32,8 @@ func Feed(c *gin.Context) {
 	}
 	//log.Println("返回视频的最新投稿时间:", convTime)
 	// 获取登录用户的 id（等待用户模块存入用户id到context）
-	userId, _ := strconv.ParseInt(c.GetString("userId"), 10, 64)
+	//userId, _ := strconv.ParseInt(c.GetString("userId"), 10, 64)
+	userId := c.GetInt64("userId")
 	videoService := service.GetVideoServiceInstance()
 	videos, nextTime, err := videoService.Feed(convTime, userId)
 	if err != nil {

@@ -18,3 +18,9 @@ func TestGetUserBasicInfoByName(t *testing.T) {
 		log.Println(res)
 	}
 }
+
+func TestInsertUser(t *testing.T) {
+	user := UserBasicInfo{Name: "unit test", Password: "unit test"}
+	flag := InsertUser(&user)
+	log.Println(flag)
+}

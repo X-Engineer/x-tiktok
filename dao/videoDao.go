@@ -79,3 +79,15 @@ func GetVideoByVideoId(videoId int64) (Video, error) {
 	}
 	return video, nil
 }
+
+// GetVideoListById 根据videoIdList查询视频信息
+func GetVideoListById(videoIdList []int64) ([]Video, error) {
+	var videoList []Video
+	result := Db.Model(Video{}).
+		Where("id in (?)", videoIdList).
+		Find(&videoList)
+	if result.Error != nil {
+		return videoList, result.Error
+	}
+	return videoList, nil
+}

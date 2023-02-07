@@ -4,7 +4,9 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"log"
+	"sync"
 	"x-tiktok/dao"
 )
 
@@ -13,6 +15,20 @@ type UserServiceImpl struct {
 	FollowService
 	// 点赞服务
 
+}
+
+var (
+	userServiceImp  *UserServiceImpl
+	userServiceOnce sync.Once
+)
+
+func GetUserServiceInstance() *UserServiceImpl {
+	userServiceOnce.Do(func() {
+		userServiceImp = &UserServiceImpl{
+			FollowService: &FollowServiceImp{},
+		}
+	})
+	return userServiceImp
 }
 
 func (usi *UserServiceImpl) GetUserBasicInfoById(id int64) dao.UserBasicInfo {
@@ -55,22 +71,23 @@ func (usi *UserServiceImpl) GetUserLoginInfoById(id int64) (User, error) {
 		IsFollow:      false,
 	}
 	u, err := dao.GetUserBasicInfoById(id)
+	fmt.Println(u)
 	if err != nil {
 		log.Println("Err:", err.Error())
 		log.Println("User Not Found")
 	}
+	userService := GetUserServiceInstance()
 	// 计算关注数
-
+	followCnt, _ := userService.GetFollowingCnt(id)
 	// 计算粉丝数
-
+	followerCnt, _ := userService.GetFollowerCnt(id)
 	// 计算作品数
 
-	// 计算喜欢数
 	user = User{
 		Id:            u.Id,
 		Name:          u.Name,
-		FollowCount:   1,
-		FollowerCount: 99999,
+		FollowCount:   followCnt,
+		FollowerCount: followerCnt,
 		IsFollow:      false,
 	}
 
@@ -84,6 +101,3 @@ func EnCoder(password string) string {
 	sha := hex.EncodeToString(h.Sum(nil))
 	return sha
 }
-
-
-
