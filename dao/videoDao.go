@@ -79,3 +79,27 @@ func GetVideoByVideoId(videoId int64) (Video, error) {
 	}
 	return video, nil
 }
+
+// GetVideoListById 根据videoIdList查询视频信息
+func GetVideoListById(videoIdList []int64) ([]Video, error) {
+	var videoList []Video
+	result := Db.Model(Video{}).
+		Where("id in (?)", videoIdList).
+		Find(&videoList)
+	if result.Error != nil {
+		return videoList, result.Error
+	}
+	return videoList, nil
+}
+
+func GetVideoCnt(userId int64) (int64, error) {
+	var count int64
+	result := Db.Model(Video{}).
+		Where("author_id = ?", userId).
+		Count(&count)
+	if result.Error != nil {
+		log.Println("根据userId获取作品数量失败！")
+		return -1, nil
+	}
+	return count, nil
+}

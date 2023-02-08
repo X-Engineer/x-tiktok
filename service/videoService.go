@@ -24,4 +24,10 @@ type VideoService interface {
 
 	// PublishList 查询用户 userId 所发布的所有视频
 	PublishList(userId int64) ([]Video, error)
+
+	// GetVideoCnt 根据用户id查询用户的作品数
+	GetVideoCnt(userId int64) (int64, error)
+
+	// GetVideoListById 查询videoId列表的视频信息
+	GetVideoListById(videoIdList []int64, userId int64) ([]Video, error)
 }

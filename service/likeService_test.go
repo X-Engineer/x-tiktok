@@ -13,8 +13,8 @@ func TestLikeServiceImpl_FavoriteAction(t *testing.T) {
 	}
 }
 
-func TestGetVideoLikeCount(t *testing.T) {
-	likeCnt, err := likeServiceImp.GetVideoLikeCount(5)
+func TestGetVideoLikedCount(t *testing.T) {
+	likeCnt, err := likeServiceImp.GetVideoLikedCount(20)
 	if err != nil {
 		log.Default()
 	}
@@ -22,9 +22,25 @@ func TestGetVideoLikeCount(t *testing.T) {
 }
 
 func TestGetUserLikeCount(t *testing.T) {
-	likeCnt, err := likeServiceImp.GetUserLikeCount(1)
+	likeCnt, err := likeServiceImp.GetUserLikeCount(5)
 	if err != nil {
 		log.Default()
 	}
 	fmt.Println(likeCnt)
+}
+
+func TestLikeServiceImpl_IsLikedByUser(t *testing.T) {
+	liked, err := likeServiceImp.IsLikedByUser(5, 23)
+	if err != nil {
+		log.Default()
+	}
+	log.Println(liked)
+}
+
+func TestLikeServiceImpl_GetUserLikedCnt(t *testing.T) {
+	count, err := likeServiceImp.GetUserLikedCnt(5)
+	if err != nil {
+		log.Default()
+	}
+	log.Println(count)
 }

@@ -37,4 +37,28 @@ func TestGetVideoByVideoId(t *testing.T) {
 	if err == nil {
 		log.Println(video)
 	}
+	// 耗时0.09s
+	for _, videoId := range []int64{15, 16, 17, 18, 19} {
+		video, _ := GetVideoByVideoId(videoId)
+		log.Println(video)
+	}
+}
+
+// 耗时0.02s
+func TestGetVideoListById(t *testing.T) {
+	videoList, err := GetVideoListById([]int64{15, 16, 17, 18, 19})
+	if err == nil {
+		log.Println(len(videoList))
+		//log.Println(videoList)
+	}
+	for _, video := range videoList {
+		log.Println(video)
+	}
+}
+
+func TestGetVideoCnt(t *testing.T) {
+	count, err := GetVideoCnt(5)
+	if err == nil {
+		log.Println(count)
+	}
 }
