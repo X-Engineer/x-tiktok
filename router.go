@@ -17,11 +17,11 @@ func initRouter(r *gin.Engine) {
 	apiRouter.POST("/user/register/", controller.Register)
 	apiRouter.POST("/user/login/", controller.Login)
 	apiRouter.POST("/publish/action/", jwt.AuthBody(), controller.Publish)
-	apiRouter.GET("/publish/list/", jwt.Auth(), controller.PublishList)
+	apiRouter.GET("/publish/list/", jwt.AuthWithoutLogin(), controller.PublishList)
 
 	// 互动接口
 	apiRouter.POST("/favorite/action/", jwt.Auth(), controller.FavoriteAction)
-	apiRouter.GET("/favorite/list/", jwt.Auth(), controller.FavoriteList)
+	apiRouter.GET("/favorite/list/", jwt.AuthWithoutLogin(), controller.FavoriteList)
 	apiRouter.POST("/comment/action/", jwt.Auth(), controller.CommentAction)
 	apiRouter.GET("/comment/list/", jwt.AuthWithoutLogin(), controller.CommentList)
 

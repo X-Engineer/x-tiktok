@@ -86,6 +86,6 @@ func (messageService *MessageServiceImpl) combineMessage(message *Message, plain
 	message.UserId = plainMessage.UserId
 	message.ReceiverId = plainMessage.ReceiverId
 	message.MsgContent = plainMessage.MsgContent
-	message.CreatedAt = plainMessage.CreatedAt.Format(config.GO_STARTER_TIME)
+	message.CreatedAt = plainMessage.CreatedAt.Unix()
 	return nil
 }
