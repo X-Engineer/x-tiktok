@@ -5,7 +5,7 @@ type Message struct {
 	UserId     int64  `json:"from_user_id"`
 	ReceiverId int64  `json:"to_user_id"`
 	MsgContent string `json:"content"`
-	CreatedAt  string `json:"create_time"`
+	CreatedAt  int64  `json:"create_time"`
 }
 
 // LatestMessage 提供给用户好友列表接口的最新一条聊天信息, msgType 消息类型，0 => 当前请求用户接收的消息， 1 => 当前请求用户发送的消息

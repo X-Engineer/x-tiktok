@@ -48,8 +48,8 @@ func MessageChat(c *gin.Context) {
 	messages, err := messageService.MessageChat(loginUserId, targetUserId)
 	log.Println(messages)
 	if err != nil {
-		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: "User doesn't exist"})
+		c.JSON(http.StatusOK, Response{StatusCode: 1, StatusMsg: err.Error()})
 	} else {
-		c.JSON(http.StatusOK, ChatResponse{Response: Response{StatusCode: 0}, MessageList: messages})
+		c.JSON(http.StatusOK, ChatResponse{Response: Response{StatusCode: 0, StatusMsg: "获取消息成功"}, MessageList: messages})
 	}
 }
