@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"x-tiktok/controller"
 	"x-tiktok/middleware/jwt"
+	"x-tiktok/middleware/redis"
 )
 
 func initRouter(r *gin.Engine) {
@@ -35,4 +36,8 @@ func initRouter(r *gin.Engine) {
 
 	// 测试接口
 	apiRouter.POST("/test/", jwt.Auth(), controller.Test)
+}
+
+func initMiddleware() {
+	redis.InitRedis()
 }

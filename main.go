@@ -6,11 +6,9 @@ import (
 
 func main() {
 	// init 操作
-	// 启动 websocket 服务
-	//go RunMessageServer()
-
 	r := gin.Default()
 
+	initMiddleware()
 	initRouter(r)
 
 	r.Run()

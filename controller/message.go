@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"x-tiktok/service"
+	"x-tiktok/util"
 )
 
 type ChatResponse struct {
@@ -35,6 +36,12 @@ func MessageAction(c *gin.Context) {
 
 // MessageChat 消息列表
 func MessageChat(c *gin.Context) {
+	params := util.GetQueryParams(c)
+	log.Printf("QueryParams: %v", params)
+	formParams, _ := util.GetPostFormParams(c)
+	log.Printf("formParams: %v", formParams)
+	body := util.GetBody(c)
+	log.Printf("request body: %v", body)
 	loginUserId := c.GetInt64("userId")
 	toUserId := c.Query("to_user_id")
 	targetUserId, err := strconv.ParseInt(toUserId, 10, 64)
