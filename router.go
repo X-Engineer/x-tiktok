@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"x-tiktok/controller"
 	"x-tiktok/middleware/jwt"
+	"x-tiktok/middleware/rabbitmq"
 	"x-tiktok/middleware/redis"
 )
 
@@ -40,4 +41,6 @@ func initRouter(r *gin.Engine) {
 
 func initMiddleware() {
 	redis.InitRedis()
+	rabbitmq.InitRabbitMQ()
+	rabbitmq.InitLikeRabbitMQ()
 }
