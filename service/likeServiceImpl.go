@@ -2,10 +2,11 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"sync"
-	"time"
 	"x-tiktok/dao"
+	"x-tiktok/middleware/rabbitmq"
 )
 
 type LikeServiceImpl struct {
@@ -30,20 +31,31 @@ func (*LikeServiceImpl) FavoriteAction(userId int64, videoId int64, actionType i
 	islike, err := dao.IsVideoLikedByUser(userId, videoId)
 	log.Print("islike:", islike)
 	log.Println("actionType:", actionType)
+	// 获取点赞和取消点赞的消息队列
+	likeAddMQ := rabbitmq.SimpleLikeAddMQ
+	likeDelMQ := rabbitmq.SimpleLikeDelMQ
 	if islike == -1 {
 		//用户没有点赞过该视频
 		//插入一条新记录
-		var likeinfo dao.Like
-		likeinfo.UserId = userId
-		likeinfo.VideoId = videoId
-		likeinfo.Liked = int8(actionType)
-		likeinfo.CreatedAt = time.Now()
-		likeinfo.UpdatedAt = time.Now()
-		err = dao.InsertLikeInfo(likeinfo)
-		return nil
+		//var likeinfo dao.Like
+		//likeinfo.UserId = userId
+		//likeinfo.VideoId = videoId
+		//likeinfo.Liked = int8(actionType)
+		//likeinfo.CreatedAt = time.Now()
+		//likeinfo.UpdatedAt = time.Now()
+		//err = dao.InsertLikeInfo(likeinfo)
+		//return nil
+		// 消息队列
+		err := likeAddMQ.PublishSimple(fmt.Sprintf("%d-%d-%s", userId, videoId, "insert"))
+		return err
 	}
 	//该用户曾对此视频点过赞
-	err = dao.UpdateLikeInfo(userId, videoId, int8(actionType))
+	//err = dao.UpdateLikeInfo(userId, videoId, int8(actionType))
+	if actionType == 1 {
+		err = likeAddMQ.PublishSimple(fmt.Sprintf("%d-%d-%s", userId, videoId, "update"))
+	} else {
+		err = likeDelMQ.PublishSimple(fmt.Sprintf("%d-%d-%s", userId, videoId, "update"))
+	}
 	if err != nil {
 		log.Print(err.Error() + "Favorite action failed!")
 		return err
