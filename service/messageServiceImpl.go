@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 	"x-tiktok/config"
 	"x-tiktok/dao"
 )
@@ -38,9 +39,9 @@ func (messageService *MessageServiceImpl) SendMessage(fromUserId int64, toUserId
 	return err
 }
 
-func (messageService *MessageServiceImpl) MessageChat(loginUserId int64, targetUserId int64) ([]Message, error) {
+func (messageService *MessageServiceImpl) MessageChat(loginUserId int64, targetUserId int64, latestTime time.Time) ([]Message, error) {
 	messages := make([]Message, 0, config.VIDEO_INIT_NUM_PER_AUTHOR)
-	plainMessages, err := dao.MessageChat(loginUserId, targetUserId)
+	plainMessages, err := dao.MessageChat(loginUserId, targetUserId, latestTime)
 	if err != nil {
 		log.Println("MessageChat Service:", err)
 		return nil, err
@@ -68,6 +69,8 @@ func (messageService *MessageServiceImpl) LatestMessage(loginUserId int64, targe
 		// 最新一条消息是当前好友发送的
 		latestMessage.msgType = 0
 	}
+	// 退出聊天框的时候，再重新设置 latestTime
+	config.LatestRequestTime[fmt.Sprintf(fmt.Sprintf("%d-%d", loginUserId, targetUserId))] = time.Unix(0, 0)
 	return latestMessage, nil
 }
 

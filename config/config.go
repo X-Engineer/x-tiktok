@@ -1,5 +1,7 @@
 package config
 
+import "time"
+
 // 存放相关配置
 
 const GO_STARTER_TIME = "2006-01-02 15:04:05"
@@ -20,3 +22,5 @@ const (
 )
 
 const LIKE = 1
+
+var LatestRequestTime = make(map[string]time.Time, 100)
