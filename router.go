@@ -43,4 +43,5 @@ func initMiddleware() {
 	redis.InitRedis()
 	rabbitmq.InitRabbitMQ()
 	rabbitmq.InitLikeRabbitMQ()
+	rabbitmq.InitFollowRabbitMQ()
 }

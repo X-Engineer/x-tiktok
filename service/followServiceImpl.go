@@ -6,17 +6,22 @@ import (
 	"sync"
 	"x-tiktok/config"
 	"x-tiktok/dao"
+	"x-tiktok/middleware/rabbitmq"
 )
 
 // FollowServiceImp 该结构体继承FollowService接口。
 type FollowServiceImp struct {
 	//MessageService
+	FollowService
 }
 
 var (
 	followServiceImp  *FollowServiceImp //controller层通过该实例变量调用service的所有业务方法。
 	followServiceOnce sync.Once         //限定该service对象为单例，节约内存。
 )
+
+// RedisFollowPrefix 前缀
+var RedisFollowPrefix = "follow:"
 
 // NewFSIInstance 生成并返回FollowServiceImp结构体单例变量。
 func NewFSIInstance() *FollowServiceImp {
@@ -37,32 +42,48 @@ func NewFSIInstance() *FollowServiceImp {
 func (followService *FollowServiceImp) FollowAction(userId int64, targetId int64) (bool, error) {
 	followDao := dao.NewFollowDaoInstance()
 	follow, err := followDao.FindEverFollowing(userId, targetId)
+	// 获取关注的消息队列
+	followAddMQ := rabbitmq.SimpleFollowAddMQ
 	// 寻找SQL 出错。
 	if nil != err {
 		return false, err
 	}
 	// 曾经关注过，只需要update一下followed即可。
 	if nil != follow {
-		_, err := followDao.UpdateFollowRelation(userId, targetId, 1)
-		// update 出错。
-		if nil != err {
+		//发送消息队列
+		err := followAddMQ.PublishSimpleFollow(fmt.Sprintf("%d-%d-%s", userId, targetId, "update"))
+		if err != nil {
 			return false, err
 		}
-		// update 成功。
 		return true, nil
+		//_, err := followDao.UpdateFollowRelation(userId, targetId, 1)
+		//// update 出错。
+		//if nil != err {
+		//	return false, err
+		//}
+		//// update 成功。
+		//return true, nil
 	}
-	// 曾经没有关注过，需要插入一条关注关系。
-	_, err = followDao.InsertFollowRelation(userId, targetId)
-	if nil != err {
-		// insert 出错
+	//发送消息队列
+	err = followAddMQ.PublishSimpleFollow(fmt.Sprintf("%d-%d-%s", userId, targetId, "insert"))
+	if err != nil {
 		return false, err
 	}
-	// insert 成功。
 	return true, nil
+	// 曾经没有关注过，需要插入一条关注关系。
+	//_, err = followDao.InsertFollowRelation(userId, targetId)
+	//if nil != err {
+	//	// insert 出错
+	//	return false, err
+	//}
+	//// insert 成功。
+	//return true, nil
 }
 
 // CancelFollowAction 取关操作的业务
 func (followService *FollowServiceImp) CancelFollowAction(userId int64, targetId int64) (bool, error) {
+	// 获取取关的消息队列
+	followDelMQ := rabbitmq.SimpleFollowDelMQ
 	followDao := dao.NewFollowDaoInstance()
 	follow, err := followDao.FindEverFollowing(userId, targetId)
 	// 寻找 SQL 出错。
@@ -71,13 +92,18 @@ func (followService *FollowServiceImp) CancelFollowAction(userId int64, targetId
 	}
 	// 曾经关注过，只需要update一下cancel即可。
 	if nil != follow {
-		_, err := followDao.UpdateFollowRelation(userId, targetId, 0)
-		// update 出错。
-		if nil != err {
+		err := followDelMQ.PublishSimpleFollow(fmt.Sprintf("%d-%d-%s", userId, targetId, "update"))
+		if err != nil {
 			return false, err
 		}
-		// update 成功。
 		return true, nil
+		//_, err := followDao.UpdateFollowRelation(userId, targetId, 0)
+		//// update 出错。
+		//if nil != err {
+		//	return false, err
+		//}
+		//// update 成功。
+		//return true, nil
 	}
 	// 没有关注关系
 	return false, nil
@@ -86,7 +112,6 @@ func (followService *FollowServiceImp) CancelFollowAction(userId int64, targetId
 // GetFollowings 获取正在关注的用户详情列表业务
 func (followService *FollowServiceImp) GetFollowings(userId int64) ([]User, error) {
 	followDao := dao.NewFollowDaoInstance()
-
 	userFollowingsId, userFollowingsCnt, err := followDao.GetFollowingsInfo(userId)
 
 	if nil != err {
