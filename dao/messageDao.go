@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"fmt"
 	"log"
 	"time"
 	"x-tiktok/config"
@@ -33,6 +34,7 @@ func SaveMessage(msg Message) error {
 		log.Println("数据库保存消息失败！", result.Error)
 		return result.Error
 	}
+	config.LatestRequestTime[fmt.Sprintf("%d-%d", msg.UserId, msg.ReceiverId)] = time.Now().Add(1 * time.Second)
 	return nil
 }
 
@@ -49,12 +51,14 @@ func SendMessage(fromUserId int64, toUserId int64, content string, actionType in
 }
 
 // MessageChat 当前登录用户和其他指定用户的聊天记录
-func MessageChat(loginUserId int64, targetUserId int64) ([]Message, error) {
+func MessageChat(loginUserId int64, targetUserId int64, latestTime time.Time) ([]Message, error) {
 	messages := make([]Message, 0, config.VIDEO_NUM_PER_REFRESH)
-	result := Db.Where(&Message{UserId: loginUserId, ReceiverId: targetUserId}).
-		Or(&Message{UserId: targetUserId, ReceiverId: loginUserId}).
+	result := Db.Where("(created_at > ? and created_at < ? ) and ((user_id = ? and receiver_id = ?) or (user_id = ? and receiver_id = ?))", latestTime, time.Now(), loginUserId, targetUserId, targetUserId, loginUserId).
 		Order("created_at asc").
 		Find(&messages)
+	if result.RowsAffected == 0 {
+		return messages, nil
+	}
 	if result.Error != nil {
 		log.Println("获取聊天记录失败！")
 		return nil, result.Error

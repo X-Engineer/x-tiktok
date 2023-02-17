@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"testing"
+	"time"
 )
 
 func TestSendMessage(t *testing.T) {
@@ -18,7 +19,7 @@ func TestSendMessage(t *testing.T) {
 func TestMessageChat(t *testing.T) {
 	loginUserId := 7
 	targetUserId := 1
-	messages, err := MessageChat(int64(loginUserId), int64(targetUserId))
+	messages, err := MessageChat(int64(loginUserId), int64(targetUserId), time.Now())
 	if err != nil {
 		log.Println("MessageChat 测试失败")
 	}

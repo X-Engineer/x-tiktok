@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"testing"
+	"time"
 )
 
 func TestMessageServiceImpl_SendMessage(t *testing.T) {
@@ -14,7 +15,7 @@ func TestMessageServiceImpl_SendMessage(t *testing.T) {
 }
 
 func TestMessageServiceImpl_MessageChat(t *testing.T) {
-	chat, _ := messageServiceImpl.MessageChat(8, 2)
+	chat, _ := messageServiceImpl.MessageChat(8, 2, time.Now())
 	for _, msg := range chat {
 		log.Println(fmt.Sprintf("%+v", msg))
 	}
