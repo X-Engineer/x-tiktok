@@ -1,7 +1,6 @@
 package dao
 
 import (
-	"fmt"
 	"log"
 	"time"
 	"x-tiktok/config"
@@ -34,7 +33,6 @@ func SaveMessage(msg Message) error {
 		log.Println("数据库保存消息失败！", result.Error)
 		return result.Error
 	}
-	config.LatestRequestTime[fmt.Sprintf("%d-%d", msg.UserId, msg.ReceiverId)] = time.Now().Add(1 * time.Second)
 	return nil
 }
 
