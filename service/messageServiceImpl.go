@@ -69,8 +69,6 @@ func (messageService *MessageServiceImpl) LatestMessage(loginUserId int64, targe
 		// 最新一条消息是当前好友发送的
 		latestMessage.msgType = 0
 	}
-	// 退出聊天框的时候，再重新设置 latestTime
-	config.LatestRequestTime[fmt.Sprintf(fmt.Sprintf("%d-%d", loginUserId, targetUserId))] = time.Unix(0, 0)
 	return latestMessage, nil
 }
 
