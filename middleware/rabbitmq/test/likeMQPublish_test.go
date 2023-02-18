@@ -17,3 +17,13 @@ func TestSimpleLikeMQPublish(t *testing.T) {
 		likeAddMQ.PublishSimple(msg)
 	}
 }
+
+func TestSimpleCommentPublish(t *testing.T) {
+	rabbitmq.InitRabbitMQ()
+	rabbitmq.InitCommentRabbitMQ()
+	commentDelMQ := rabbitmq.SimpleCommentDelMQ
+	commentId := "26"
+	for i := 0; i < 10; i++ {
+		commentDelMQ.PublishSimple(commentId)
+	}
+}

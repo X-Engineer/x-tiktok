@@ -44,4 +44,5 @@ func initMiddleware() {
 	rabbitmq.InitRabbitMQ()
 	rabbitmq.InitLikeRabbitMQ()
 	rabbitmq.InitFollowRabbitMQ()
+	rabbitmq.InitCommentRabbitMQ()
 }

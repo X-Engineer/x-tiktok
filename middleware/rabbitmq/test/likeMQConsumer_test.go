@@ -11,3 +11,10 @@ func TestSimpleLikeMQConsumer(t *testing.T) {
 	likeAddMQ := rabbitmq.SimpleLikeAddMQ
 	likeAddMQ.ConsumeSimple()
 }
+
+func TestSimpleCommentConsumer(t *testing.T) {
+	rabbitmq.InitRabbitMQ()
+	rabbitmq.InitCommentRabbitMQ()
+	commentDelMQ := rabbitmq.SimpleCommentDelMQ
+	commentDelMQ.ConsumeSimple()
+}

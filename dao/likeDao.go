@@ -105,3 +105,16 @@ func IsLikedByUser(userId int64, videoId int64) (bool, error) {
 	}
 	return true, nil
 }
+
+// GetUserVideoLikedByOther 计算用户被他人点赞的视频列表id
+func GetUserVideoLikedByOther(userId int64) ([]int64, error) {
+	var likedList []int64
+	result := Db.Model(Like{}).
+		Joins("join video on like.video_id = video.id and author_id = ? and liked = ?", userId, 1).
+		Distinct("video_id").
+		Pluck("video_id", &likedList)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return likedList, nil
+}

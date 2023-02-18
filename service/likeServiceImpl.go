@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -113,14 +112,14 @@ func (*LikeServiceImpl) IsLikedByUser(userId int64, videoId int64) (bool, error)
 
 // GetUserLikedCnt 计算用户被点赞的视频获赞总数
 func (*LikeServiceImpl) GetUserLikedCnt(userId int64) (int64, error) {
-	likeService := NewLikeServImpInstance()
-	likedVideoList, err := likeService.GetLikesList(userId)
+	likedVideoIdList, err := dao.GetUserVideoLikedByOther(userId)
 	if err != nil {
-		return -1, errors.New("获取用户点赞数失败")
+		return -1, nil
 	}
 	var count int64 = 0
-	for _, video := range likedVideoList {
-		count += video.FavoriteCount
+	for _, videoId := range likedVideoIdList {
+		tmp, _ := dao.VideoLikedCount(videoId)
+		count += tmp
 	}
 	return count, nil
 }
