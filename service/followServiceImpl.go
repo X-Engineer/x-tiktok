@@ -3,10 +3,12 @@ package service
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"sync"
 	"x-tiktok/config"
 	"x-tiktok/dao"
 	"x-tiktok/middleware/rabbitmq"
+	"x-tiktok/middleware/redis"
 )
 
 // FollowServiceImp 该结构体继承FollowService接口。
@@ -40,6 +42,9 @@ func NewFSIInstance() *FollowServiceImp {
 
 // FollowAction 关注操作的业务
 func (followService *FollowServiceImp) FollowAction(userId int64, targetId int64) (bool, error) {
+
+	AddToRDBWhenFollow(int(userId), int(targetId))
+
 	followDao := dao.NewFollowDaoInstance()
 	follow, err := followDao.FindEverFollowing(userId, targetId)
 	// 获取关注的消息队列
@@ -80,8 +85,26 @@ func (followService *FollowServiceImp) FollowAction(userId int64, targetId int64
 	//return true, nil
 }
 
+func AddToRDBWhenFollow(userId int, targetId int) {
+	// 当a关注b时，redis的三个关注数据库会有以下操作
+	redis.UserFollowings.SAdd(redis.Ctx, strconv.Itoa(userId), -1)
+	redis.UserFollowings.SAdd(redis.Ctx, strconv.Itoa(userId), targetId)
+
+	redis.UserFollowers.SAdd(redis.Ctx, strconv.Itoa(targetId), -1)
+	redis.UserFollowers.SAdd(redis.Ctx, strconv.Itoa(targetId), userId)
+
+	// 如果此时b也关注了a,说明b的互关用户有a,然后a的互关对象也有b
+	if flag, _ := redis.UserFollowings.SIsMember(redis.Ctx, strconv.Itoa(targetId), userId).Result(); flag {
+		redis.UserFriends.SAdd(redis.Ctx, strconv.Itoa(userId), targetId)
+		redis.UserFriends.SAdd(redis.Ctx, strconv.Itoa(targetId), userId)
+	}
+}
+
 // CancelFollowAction 取关操作的业务
 func (followService *FollowServiceImp) CancelFollowAction(userId int64, targetId int64) (bool, error) {
+
+	DelToRDBWhenCancelFollow(int(userId), int(targetId))
+
 	// 获取取关的消息队列
 	followDelMQ := rabbitmq.SimpleFollowDelMQ
 	followDao := dao.NewFollowDaoInstance()
@@ -107,6 +130,16 @@ func (followService *FollowServiceImp) CancelFollowAction(userId int64, targetId
 	}
 	// 没有关注关系
 	return false, nil
+}
+func DelToRDBWhenCancelFollow(userId int, targetId int) {
+	// 当a取关b时，redis的三个关注数据库会有以下操作
+	redis.UserFollowings.SRem(redis.Ctx, strconv.Itoa(userId), targetId)
+
+	redis.UserFollowers.SRem(redis.Ctx, strconv.Itoa(targetId), userId)
+
+	// a取关b，如果a和b属于互关的用户，则两者的互关记录都会删除
+	redis.UserFriends.SRem(redis.Ctx, strconv.Itoa(userId), targetId)
+	redis.UserFriends.SRem(redis.Ctx, strconv.Itoa(targetId), userId)
 }
 
 // GetFollowings 获取正在关注的用户详情列表业务
@@ -244,20 +277,105 @@ func (followService *FollowServiceImp) GetFriends(userId int64) ([]FriendUser, e
 	return userFriends, nil
 }
 
-// GetFollowingCnt 根据用户id查询关注数
+// GetFollowingCnt 加入redis 根据用户id查询关注数
 func (followService *FollowServiceImp) GetFollowingCnt(userId int64) (int64, error) {
+	//followDao := dao.NewFollowDaoInstance()
+	//return followDao.GetFollowingCnt(userId)
+
+	if cnt, err := redis.UserFollowings.SCard(redis.Ctx, strconv.Itoa(int(userId))).Result(); cnt > 0 {
+		redis.UserFollowings.Expire(redis.Ctx, strconv.Itoa(int(userId)), config.ExpireTime)
+		return cnt - 1, err
+	}
+
 	followDao := dao.NewFollowDaoInstance()
-	return followDao.GetFollowingCnt(userId)
+	ids, _, err := followDao.GetFollowingsInfo(userId)
+
+	if err != nil {
+		return 0, err
+	}
+
+	go ImportToRDBFollowing(int(userId), ids)
+
+	return int64(len(ids)), nil
+}
+
+// ImportToRDBFollowing 将登陆用户的关注id列表导入到following数据库中
+func ImportToRDBFollowing(userId int, ids []int64) {
+	redis.UserFollowings.SAdd(redis.Ctx, strconv.Itoa(userId), -1)
+
+	for id := range ids {
+		redis.UserFollowings.SAdd(redis.Ctx, strconv.Itoa(userId), int(id))
+	}
+
+	redis.UserFollowings.Expire(redis.Ctx, strconv.Itoa(userId), config.ExpireTime)
 }
 
 // GetFollowerCnt 根据用户id查询粉丝数
 func (followService *FollowServiceImp) GetFollowerCnt(userId int64) (int64, error) {
+	//followDao := dao.NewFollowDaoInstance()
+	//return followDao.GetFollowerCnt(userId)
+
+	if cnt, err := redis.UserFollowers.SCard(redis.Ctx, strconv.Itoa(int(userId))).Result(); cnt > 0 {
+		redis.UserFollowers.Expire(redis.Ctx, strconv.Itoa(int(userId)), config.ExpireTime)
+		return cnt - 1, err
+	}
+
 	followDao := dao.NewFollowDaoInstance()
-	return followDao.GetFollowerCnt(userId)
+	ids, _, err := followDao.GetFollowersInfo(userId)
+
+	if err != nil {
+		return 0, err
+	}
+
+	go ImportToRDBFollower(int(userId), ids)
+
+	return int64(len(ids)), nil
+}
+
+// ImportToRDBFollower 将登陆用户的关注id列表导入到follower数据库中
+func ImportToRDBFollower(userId int, ids []int64) {
+	redis.UserFollowings.SAdd(redis.Ctx, strconv.Itoa(userId), -1)
+
+	for id := range ids {
+		redis.UserFollowings.SAdd(redis.Ctx, strconv.Itoa(userId), int(id))
+	}
+
+	redis.UserFollowings.Expire(redis.Ctx, strconv.Itoa(userId), config.ExpireTime)
 }
 
 // CheckIsFollowing 判断当前登录用户是否关注了目标用户
 func (followService *FollowServiceImp) CheckIsFollowing(userId int64, targetId int64) (bool, error) {
+	//followDao := dao.NewFollowDaoInstance()
+	//return followDao.FindFollowRelation(userId, targetId)
+
+	if flag, err := redis.UserFollowings.SIsMember(redis.Ctx, strconv.Itoa(int(userId)), targetId).Result(); flag {
+		if err != nil {
+			return false, err
+		} else {
+			return true, nil
+		}
+	}
+
+	// 该键有效说明是没有关注
+	if cnt, err := redis.UserFollowings.SCard(redis.Ctx, strconv.Itoa(int(userId))).Result(); cnt > 0 {
+		if err != nil {
+			return false, err
+		}
+
+		redis.UserFollowings.Expire(redis.Ctx, strconv.Itoa(int(userId)), config.ExpireTime)
+		return false, nil
+	}
+
+	// 该键无效，导入
 	followDao := dao.NewFollowDaoInstance()
+	ids, _, err := followDao.GetFollowingsInfo(userId)
+
+	if err != nil {
+		return false, err
+	}
+
+	go ImportToRDBFollowing(int(userId), ids)
+
 	return followDao.FindFollowRelation(userId, targetId)
+
 }
