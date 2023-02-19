@@ -8,11 +8,16 @@ import (
 )
 
 var Ctx = context.Background()
-
+var NilError = redis.Nil
 var RdbTest *redis.Client
 var UserFollowings *redis.Client
 var UserFollowers *redis.Client
 var UserFriends *redis.Client
+
+const (
+	prodRedisAddress  = ""
+	prodRedisPassword = ""
+)
 
 // RdbVCid 存储video与comment的关系
 var RdbVCid *redis.Client
@@ -51,18 +56,18 @@ func InitRedis() {
 		DB:       3,
 	})
 	UserFollowings = redis.NewClient(&redis.Options{
-		Addr:     "106.14.252.145:6739",
-		Password: "tiktok123",
+		Addr:     prodRedisAddress,
+		Password: prodRedisPassword,
 		DB:       11,
 	})
 	UserFollowers = redis.NewClient(&redis.Options{
-		Addr:     "106.14.252.145:6739",
-		Password: "tiktok123",
+		Addr:     prodRedisAddress,
+		Password: prodRedisPassword,
 		DB:       12,
 	})
 	UserFriends = redis.NewClient(&redis.Options{
-		Addr:     "106.14.252.145:6739",
-		Password: "tiktok123",
+		Addr:     prodRedisAddress,
+		Password: prodRedisPassword,
 		DB:       13,
 	})
 }

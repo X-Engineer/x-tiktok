@@ -25,7 +25,8 @@ func TestFollowServiceImp_GetFollowers(t *testing.T) {
 }
 
 func TestFollowServiceImp_GetFollowingCnt(t *testing.T) {
-	userIdCnt, err := followServiceImp.GetFollowingCnt(2)
+
+	userIdCnt, err := followServiceImp.GetFollowingCnt(11)
 	if err != nil {
 		log.Default()
 	}
@@ -33,7 +34,8 @@ func TestFollowServiceImp_GetFollowingCnt(t *testing.T) {
 }
 
 func TestFollowServiceImp_GetFollowerCnt(t *testing.T) {
-	userIdCnt, err := followServiceImp.GetFollowerCnt(2)
+
+	userIdCnt, err := followServiceImp.GetFollowerCnt(11)
 	if err != nil {
 		log.Default()
 	}
