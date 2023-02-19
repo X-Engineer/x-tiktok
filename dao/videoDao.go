@@ -58,10 +58,14 @@ func GetVideosByUserId(userId int64) ([]Video, error) {
 // GetVideosByLatestTime 按投稿时间倒序的视频列表
 func GetVideosByLatestTime(latestTime time.Time) ([]Video, error) {
 	videos := make([]Video, config.VIDEO_NUM_PER_REFRESH)
-	result := Db.Where("created_at <= ?", latestTime).
+	result := Db.Where("created_at < ?", latestTime).
 		Order("created_at desc").
 		Limit(config.VIDEO_NUM_PER_REFRESH).
 		Find(&videos)
+	if result.RowsAffected == 0 {
+		log.Println("没有更多视频了！")
+		return videos, nil
+	}
 	if result.Error != nil {
 		log.Println("获取视频 Feed 失败！")
 		return nil, result.Error

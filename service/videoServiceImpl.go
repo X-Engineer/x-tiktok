@@ -57,6 +57,9 @@ func (videoService *VideoServiceImpl) Feed(latestTime time.Time, userId int64) (
 		log.Println("GetVideosByLatestTime:", err)
 		return nil, time.Time{}, err
 	}
+	if plainVideos == nil || len(plainVideos) == 0 {
+		return videos, time.Time{}, nil
+	}
 	err = videoService.getRespVideos(&videos, &plainVideos, userId)
 	if err != nil {
 		log.Println("getRespVideos:", err)
