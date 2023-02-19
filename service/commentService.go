@@ -20,4 +20,6 @@ type Comment struct {
 	User       User   `json:"user"`
 	Content    string `json:"content"`
 	CreateDate string `json:"create_date"`
+	LikeCount  int64  `json:"like_count"`
+	TeaseCount int64  `json:"tease_count"`
 }

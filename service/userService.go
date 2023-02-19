@@ -15,7 +15,7 @@ type UserService interface {
 	// GetUserLoginInfoById 根据用户id获取用户的详细信息（未登录）
 	GetUserLoginInfoById(id int64) (User, error)
 
-	// 根据用户id获取用户的详细信息 (登录)
+	// GetUserLoginInfoByIdWithCurId 根据用户id获取用户的详细信息 (登录)
 	GetUserLoginInfoByIdWithCurId(id int64, curId int64) (User, error)
 
 	// InsertUser 添加一个用户
@@ -23,12 +23,15 @@ type UserService interface {
 }
 
 type User struct {
-	Id             int64  `json:"id"`
-	Name           string `json:"name"`
-	FollowCount    int64  `json:"follow_count"`
-	FollowerCount  int64  `json:"follower_count"`
-	IsFollow       bool   `json:"is_follow"`
-	TotalFavorited int64  `json:"total_favorited"`
-	FavoriteCount  int64  `json:"favorite_count"`
-	WorkCount      int64  `json:"work_count"`
+	Id              int64  `json:"id"`
+	Name            string `json:"name"`
+	FollowCount     int64  `json:"follow_count"`
+	FollowerCount   int64  `json:"follower_count"`
+	IsFollow        bool   `json:"is_follow"`
+	Avatar          string `json:"avatar"`
+	BackgroundImage string `json:"background_image"`
+	Signature       string `json:"signature"`
+	TotalFavorited  int64  `json:"total_favorited"`
+	WorkCount       int64  `json:"work_count"`
+	FavoriteCount   int64  `json:"favorite_count"`
 }

@@ -15,7 +15,7 @@ var RdbTest *redis.Client
 func InitRedis() {
 	RdbTest = redis.NewClient(&redis.Options{
 		Addr:     "ip:port",
-		Password: "redis-password",
+		Password: "redis-passwd",
 		DB:       0,
 	})
 }

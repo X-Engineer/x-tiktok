@@ -63,3 +63,11 @@ func TestIsLikedByUser(t *testing.T) {
 	}
 	log.Println(flag)
 }
+
+func TestGetUserVideoLikedByOther(t *testing.T) {
+	likedList, err := GetUserVideoLikedByOther(5)
+	if err != nil {
+		log.Default()
+	}
+	log.Println(likedList)
+}
