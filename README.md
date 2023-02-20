@@ -20,3 +20,12 @@
 15. `git checkout main`
 16. `git pull upstream main`
 17. `Go back to step 5 to develop new features`
+
+# deploy
+1. `git clone https://github.com/X-Engineer/x-tiktok`
+2. `cd x-tiktok`
+3. config your database in `dao/db.go`
+4. config your redis in `middleware/redis/redis.go`
+5. config your rabbitmq in `middleware/rabbitmq/rabbitmq.go`
+6. config your oss and jwt-token in `config/config.go`
+7. sh run.sh
