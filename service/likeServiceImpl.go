@@ -112,14 +112,19 @@ func (*LikeServiceImpl) IsLikedByUser(userId int64, videoId int64) (bool, error)
 
 // GetUserLikedCnt 计算用户被点赞的视频获赞总数
 func (*LikeServiceImpl) GetUserLikedCnt(userId int64) (int64, error) {
-	likedVideoIdList, err := dao.GetUserVideoLikedByOther(userId)
+	//likedVideoIdList, err := dao.GetUserVideoLikedByOther(userId)
+	//if err != nil {
+	//	return -1, nil
+	//}
+	//var count int64 = 0
+	//for _, videoId := range likedVideoIdList {
+	//	tmp, _ := dao.VideoLikedCount(videoId)
+	//	count += tmp
+	//}
+	// 通过一条 sql 语句计算该用户的视频获赞总数，减少数据库访问次数
+	count, err := dao.GetUserVideoLikedTotalCount(userId)
 	if err != nil {
-		return -1, nil
-	}
-	var count int64 = 0
-	for _, videoId := range likedVideoIdList {
-		tmp, _ := dao.VideoLikedCount(videoId)
-		count += tmp
+		return -1, err
 	}
 	return count, nil
 }

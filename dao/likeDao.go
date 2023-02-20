@@ -118,3 +118,13 @@ func GetUserVideoLikedByOther(userId int64) ([]int64, error) {
 	}
 	return likedList, nil
 }
+
+// GetUserVideoLikedTotalCount 获取用户发布视频的总获赞数量
+func GetUserVideoLikedTotalCount(userId int64) (int64, error) {
+	var totalLikedCount int64
+	result := Db.Model(Like{}).Joins("join video on like.video_id = video.id and author_id = ? and liked = ?", userId, 1).Count(&totalLikedCount)
+	if result.Error != nil {
+		return 0, result.Error
+	}
+	return totalLikedCount, nil
+}
