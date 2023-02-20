@@ -5,10 +5,12 @@ import (
 	"log"
 	"testing"
 	"x-tiktok/dao"
+	"x-tiktok/middleware/redis"
 )
 
 func TestCommentServiceImpl_GetCommentCnt(t *testing.T) {
-	count, err := commentServiceImpl.GetCommentCnt(14)
+	redis.InitRedis()
+	count, err := commentServiceImpl.GetCommentCnt(25)
 	if err != nil {
 		log.Default()
 	}
@@ -16,6 +18,7 @@ func TestCommentServiceImpl_GetCommentCnt(t *testing.T) {
 }
 
 func TestCommentServiceImpl_CommentAction(t *testing.T) {
+	redis.InitRedis()
 	var comment dao.Comment = dao.Comment{
 		UserId:  5,
 		VideoId: 14,
@@ -29,6 +32,7 @@ func TestCommentServiceImpl_CommentAction(t *testing.T) {
 }
 
 func TestCommentServiceImpl_DeleteCommentAction(t *testing.T) {
+	redis.InitRedis()
 	err := commentServiceImpl.DeleteCommentAction(1)
 	if err != nil {
 		log.Default()
@@ -36,7 +40,8 @@ func TestCommentServiceImpl_DeleteCommentAction(t *testing.T) {
 }
 
 func TestCommentServiceImpl_GetCommentList(t *testing.T) {
-	commentList, err := commentServiceImpl.GetCommentList(14, 5)
+	redis.InitRedis()
+	commentList, err := commentServiceImpl.GetCommentList(24, 1)
 	if err != nil {
 		log.Default()
 	}
