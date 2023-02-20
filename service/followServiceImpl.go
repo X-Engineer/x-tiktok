@@ -15,6 +15,7 @@ import (
 type FollowServiceImp struct {
 	//MessageService
 	FollowService
+	UserService
 }
 
 var (
@@ -42,11 +43,7 @@ func NewFSIInstance() *FollowServiceImp {
 	followServiceOnce.Do(
 		func() {
 			followServiceImp = &FollowServiceImp{
-				//todo 这块暂时不考虑
-				//UserService: &UserServiceImpl{
-				//	// 存在我调userService中，userService又要调我。
-				//	FollowService: &FollowServiceImp{},
-				//},
+				UserService: &UserServiceImpl{},
 			}
 		})
 	return followServiceImp
@@ -498,7 +495,13 @@ func (followService *FollowServiceImp) BuildUser(userId int64, users []User, ids
 		users[i].Id = ids[i]
 
 		var err1 error
-		users[i].Name, err1 = followDao.GetUserName(ids[i])
+		user, err := followService.GetUserLoginInfoById(ids[i])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		//users[i].Name, err1 = followDao.GetUserName(ids[i])
+		users[i].Name = user.Name
 		if nil != err1 {
 			log.Println(err1.Error())
 			return err1
@@ -533,7 +536,7 @@ func (followService *FollowServiceImp) BuildUser(userId int64, users []User, ids
 // BuildFriendUser 根据传入的id列表和空frienduser数组，构建业务所需frienduser数组并返回
 func (followService *FollowServiceImp) BuildFriendUser(userId int64, friendUsers []FriendUser, ids []int64) error {
 
-	followDao := dao.NewFollowDaoInstance()
+	//followDao := dao.NewFollowDaoInstance()
 	msi := messageServiceImpl
 
 	for i := 0; i < len(ids); i++ {
@@ -542,16 +545,18 @@ func (followService *FollowServiceImp) BuildFriendUser(userId int64, friendUsers
 		//	continue
 		//}
 
-		messageInfo, err := msi.LatestMessage(userId, ids[i])
-
-		if err != nil {
-			continue
-		}
-
 		friendUsers[i].Id = ids[i]
 
 		var err1 error
-		friendUsers[i].Name, err1 = followDao.GetUserName(ids[i])
+		user, err := followService.GetUserLoginInfoById(ids[i])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		//users[i].Name, err1 = followDao.GetUserName(ids[i])
+		friendUsers[i].Name = user.Name
+		//friendUsers[i].Name, err1 = followDao.GetUserName(ids[i])
+
 		if nil != err1 {
 			log.Println(err1.Error())
 			return err1
@@ -573,6 +578,15 @@ func (followService *FollowServiceImp) BuildFriendUser(userId int64, friendUsers
 
 		friendUsers[i].IsFollow = true
 		friendUsers[i].Avatar = config.CUSTOM_DOMAIN + config.OSS_USER_AVATAR_DIR
+
+		messageInfo, err := msi.LatestMessage(userId, ids[i])
+
+		//在根据id获取不到最新一条消息时，需要返回对应的id
+		if err != nil {
+
+			continue
+		}
+
 		friendUsers[i].Message = messageInfo.message
 		friendUsers[i].MsgType = messageInfo.msgType
 	}
