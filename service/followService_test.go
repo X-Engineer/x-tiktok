@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"log"
 	"testing"
+	"x-tiktok/middleware/redis"
 )
 
 func TestFollowServiceImp_GetFollowings(t *testing.T) {
+
+	redis.InitRedis()
 	followings, err := followServiceImp.GetFollowings(1)
 
 	if err != nil {
@@ -43,7 +46,17 @@ func TestFollowServiceImp_GetFollowerCnt(t *testing.T) {
 }
 
 func TestFollowServiceImp_CheckIsFollowing(t *testing.T) {
+	redis.InitRedis()
 	result, err := followServiceImp.CheckIsFollowing(11, 2)
+	if err != nil {
+		log.Default()
+	}
+	fmt.Println(result)
+}
+
+func TestFollowServiceImp_FollowAction(t *testing.T) {
+	redis.InitRedis()
+	result, err := followServiceImp.FollowAction(1, 16)
 	if err != nil {
 		log.Default()
 	}
