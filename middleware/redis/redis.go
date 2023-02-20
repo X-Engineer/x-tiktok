@@ -10,14 +10,15 @@ import (
 var Ctx = context.Background()
 var NilError = redis.Nil
 var RdbTest *redis.Client
-var UserFollowings *redis.Client
-var UserFollowers *redis.Client
-var UserFriends *redis.Client
 
-const (
-	prodRedisAddress  = ""
-	prodRedisPassword = ""
-)
+// UserFollowings 根据用户id找到他关注的人
+var UserFollowings *redis.Client
+
+// UserFollowers 根据用户id找到他的粉丝
+var UserFollowers *redis.Client
+
+// UserFriends 根据用户id找到他的好友
+var UserFriends *redis.Client
 
 // RdbVCid 存储video与comment的关系
 var RdbVCid *redis.Client
@@ -56,18 +57,18 @@ func InitRedis() {
 		DB:       3,
 	})
 	UserFollowings = redis.NewClient(&redis.Options{
-		Addr:     prodRedisAddress,
-		Password: prodRedisPassword,
+		Addr:     ProdRedisAddr,
+		Password: ProRedisPwd,
 		DB:       11,
 	})
 	UserFollowers = redis.NewClient(&redis.Options{
-		Addr:     prodRedisAddress,
-		Password: prodRedisPassword,
+		Addr:     ProdRedisAddr,
+		Password: ProRedisPwd,
 		DB:       12,
 	})
 	UserFriends = redis.NewClient(&redis.Options{
-		Addr:     prodRedisAddress,
-		Password: prodRedisPassword,
+		Addr:     ProdRedisAddr,
+		Password: ProRedisPwd,
 		DB:       13,
 	})
 }
