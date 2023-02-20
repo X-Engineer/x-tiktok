@@ -34,6 +34,10 @@ const (
 	ProRedisPwd   = "redis-passwd"
 )
 
+var RdbLikeVideoId *redis.Client  //视频获赞用户Id集合    数据类型Set
+var RdbLikeUserId *redis.Client   //用户点赞视频Id集合    数据类型Set
+var RdbLikeUserCnt *redis.Client  //用户点赞视频数量键值对 数据类型Hash
+var RdbLikeVideoCnt *redis.Client //视频获赞数量键值对   数据类型Hash
 // InitRedis 初始化 Redis 连接，redis 默认 16 个 DB
 func InitRedis() {
 	RdbTest = redis.NewClient(&redis.Options{
@@ -56,11 +60,19 @@ func InitRedis() {
 		Password: ProRedisPwd,
 		DB:       3,
 	})
+	RdbLikeVideoId = redis.NewClient(&redis.Options{
+		Addr:     ProdRedisAddr,
+		Password: ProRedisPwd,
+		DB:       6,
 	UserFollowings = redis.NewClient(&redis.Options{
 		Addr:     ProdRedisAddr,
 		Password: ProRedisPwd,
 		DB:       11,
 	})
+	RdbLikeUserId = redis.NewClient(&redis.Options{
+		Addr:     ProdRedisAddr,
+		Password: ProRedisPwd,
+		DB:       7,
 	UserFollowers = redis.NewClient(&redis.Options{
 		Addr:     ProdRedisAddr,
 		Password: ProRedisPwd,
@@ -70,6 +82,16 @@ func InitRedis() {
 		Addr:     ProdRedisAddr,
 		Password: ProRedisPwd,
 		DB:       13,
+	})
+	RdbLikeUserCnt = redis.NewClient(&redis.Options{
+		Addr:     ProdRedisAddr,
+		Password: ProRedisPwd,
+		DB:       8,
+	})
+	RdbLikeVideoCnt = redis.NewClient(&redis.Options{
+		Addr:     ProdRedisAddr,
+		Password: ProRedisPwd,
+		DB:       9,
 	})
 }
 

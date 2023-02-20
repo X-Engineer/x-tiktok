@@ -4,16 +4,18 @@ import (
 	"fmt"
 	"log"
 	"testing"
+	"x-tiktok/middleware/redis"
 )
 
 func TestLikeServiceImpl_FavoriteAction(t *testing.T) {
-	err := likeServiceImp.FavoriteAction(157, 5, 1)
+	err := likeServiceImp.FavoriteAction(18, 15, 0)
 	if err != nil {
 		return
 	}
 }
 
 func TestGetVideoLikedCount(t *testing.T) {
+	redis.InitRedis()
 	likeCnt, err := likeServiceImp.GetVideoLikedCount(20)
 	if err != nil {
 		log.Default()
@@ -22,11 +24,12 @@ func TestGetVideoLikedCount(t *testing.T) {
 }
 
 func TestGetUserLikeCount(t *testing.T) {
-	likeCnt, err := likeServiceImp.GetUserLikeCount(5)
+	redis.InitRedis()
+	likeCnt, err := likeServiceImp.GetUserLikeCount(1)
 	if err != nil {
 		log.Default()
 	}
-	fmt.Println(likeCnt)
+	log.Println(likeCnt)
 }
 
 func TestLikeServiceImpl_IsLikedByUser(t *testing.T) {
@@ -38,7 +41,16 @@ func TestLikeServiceImpl_IsLikedByUser(t *testing.T) {
 }
 
 func TestLikeServiceImpl_GetUserLikedCnt(t *testing.T) {
-	count, err := likeServiceImp.GetUserLikedCnt(5)
+	count, err := likeServiceImp.GetUserLikedCnt(18)
+	if err != nil {
+		log.Default()
+	}
+	log.Println(count)
+}
+
+func TestRdsGetUserLikedCnt(t *testing.T) {
+	redis.InitRedis()
+	count, err := likeServiceImp.RdsGetUserLikedCnt(18)
 	if err != nil {
 		log.Default()
 	}

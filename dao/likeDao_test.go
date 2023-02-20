@@ -1,14 +1,14 @@
 package dao
 
 import (
-	"fmt"
 	"log"
 	"testing"
 	"time"
+	"x-tiktok/middleware/redis"
 )
 
 func TestInsertLikeInfo(t *testing.T) {
-	err := InsertLikeInfo(Like{1001, 151, 1, 1, time.Now(), time.Now()})
+	err := InsertLikeInfo(Like{76, 18, 17, 1, time.Now(), time.Now()})
 	if err != nil {
 		return
 	}
@@ -22,13 +22,13 @@ func TestUpdateLikeInfo(t *testing.T) {
 }
 
 func TestGetLikeListByUserId(t *testing.T) {
-	list, cnt, err := GetLikeListByUserId(5)
+	list, err := GetLikeListByUserId(5)
 	if err != nil {
 		log.Print(err.Error())
 	}
-	log.Println(cnt)
+	//log.Println(cnt)
 	for _, v := range list {
-		fmt.Printf("%d\n", v)
+		log.Printf("%d\n", v)
 	}
 }
 
@@ -37,7 +37,7 @@ func TestIsVideoLikedByUser(t *testing.T) {
 	if err != nil {
 		log.Print(err.Error())
 	}
-	fmt.Printf("islike：%d\n", islike)
+	log.Printf("islike：%d\n", islike)
 }
 
 func TestVideoLikedCount(t *testing.T) {
@@ -45,15 +45,16 @@ func TestVideoLikedCount(t *testing.T) {
 	if err != nil {
 		log.Print(err.Error())
 	}
-	fmt.Printf("Like Count：%d\n", likeCnt)
+	log.Printf("Like Count：%d\n", likeCnt)
 }
 
 func TestGetLikeCountByUser(t *testing.T) {
-	likeCnt, err := GetLikeCountByUser(152)
+	redis.InitRedis()
+	likeCnt, err := GetLikeCountByUser(5)
 	if err != nil {
 		log.Print(err.Error())
 	}
-	fmt.Printf("Like Count：%d\n", likeCnt)
+	log.Printf("Like Count：%d\n", likeCnt)
 }
 
 func TestIsLikedByUser(t *testing.T) {
@@ -64,10 +65,10 @@ func TestIsLikedByUser(t *testing.T) {
 	log.Println(flag)
 }
 
-func TestGetUserVideoLikedByOther(t *testing.T) {
-	likedList, err := GetUserVideoLikedByOther(5)
-	if err != nil {
-		log.Default()
-	}
-	log.Println(likedList)
-}
+//func TestGetUserVideoLikedByOther(t *testing.T) {
+//	likedList, err := GetUserVideoLikedByOther(5)
+//	if err != nil {
+//		log.Default()
+//	}
+//	log.Println(likedList)
+//}
