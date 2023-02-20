@@ -155,6 +155,30 @@ func (*FollowDao) GetFollowersInfo(userId int64) ([]int64, int64, error) {
 	return followerId, followerCnt, nil
 }
 
+func (*FollowDao) GetFriendsInfo(userId int64) ([]int64, int64, error) {
+
+	friendId, friendCnt, err := followDao.GetFollowingsInfo(userId)
+
+	if nil != err {
+		log.Println(err.Error())
+		return nil, -1, err
+	}
+
+	for i := 0; int64(i) < friendCnt; i++ {
+		// 判断每一个登陆用户的关注用户是否关注了登陆用户，没关注就从集合里面剔除
+		if flag, err1 := followDao.FindFollowRelation(friendId[i], userId); !flag {
+			if err1 != nil {
+				return nil, -1, err1
+			}
+			friendId = append(friendId[:i], friendId[i+1:]...)
+			friendCnt--
+		}
+
+	}
+	return friendId, friendCnt, nil
+
+}
+
 // GetFollowingCnt 给定当前用户id，查询relation表中该用户关注了多少人。
 func (*FollowDao) GetFollowingCnt(userId int64) (int64, error) {
 	// 用于存储当前用户关注了多少人。
