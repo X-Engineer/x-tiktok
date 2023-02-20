@@ -11,12 +11,41 @@ var Ctx = context.Background()
 
 var RdbTest *redis.Client
 
+// RdbVCid 存储video与comment的关系
+var RdbVCid *redis.Client
+
+// RdbCVid 根据commentId找videoId
+var RdbCVid *redis.Client
+
+// RdbCIdComment 根据commentId 找comment
+var RdbCIdComment *redis.Client
+
+const (
+	ProdRedisAddr = "ip:port"
+	ProRedisPwd   = "redis-passwd"
+)
+
 // InitRedis 初始化 Redis 连接，redis 默认 16 个 DB
 func InitRedis() {
 	RdbTest = redis.NewClient(&redis.Options{
-		Addr:     "ip:port",
-		Password: "redis-passwd",
+		Addr:     ProdRedisAddr,
+		Password: ProRedisPwd,
 		DB:       0,
+	})
+	RdbVCid = redis.NewClient(&redis.Options{
+		Addr:     ProdRedisAddr,
+		Password: ProRedisPwd,
+		DB:       1,
+	})
+	RdbCVid = redis.NewClient(&redis.Options{
+		Addr:     ProdRedisAddr,
+		Password: ProRedisPwd,
+		DB:       2,
+	})
+	RdbCIdComment = redis.NewClient(&redis.Options{
+		Addr:     ProdRedisAddr,
+		Password: ProRedisPwd,
+		DB:       3,
 	})
 }
 
