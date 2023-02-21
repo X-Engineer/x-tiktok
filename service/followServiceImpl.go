@@ -352,6 +352,7 @@ func (followService *FollowServiceImp) GetFollowingCnt(userId int64) (int64, err
 	//followDao := dao.NewFollowDaoInstance()
 	//return followDao.GetFollowingCnt(userId)
 	//redis.InitRedis()
+	redis.UserFollowings.SAdd(redis.Ctx, strconv.FormatInt(userId, 10), -1)
 	cnt, err := redis.UserFollowings.SCard(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
 	if err != nil {
 		log.Println(err.Error())
@@ -382,6 +383,7 @@ func (followService *FollowServiceImp) GetFollowerCnt(userId int64) (int64, erro
 	//followDao := dao.NewFollowDaoInstance()
 	//return followDao.GetFollowerCnt(userId)
 	//redis.InitRedis()
+	redis.UserFollowers.SAdd(redis.Ctx, strconv.FormatInt(userId, 10), -1)
 	if cnt, err := redis.UserFollowers.SCard(redis.Ctx, strconv.Itoa(int(userId))).Result(); cnt > 0 {
 		redis.UserFollowers.Expire(redis.Ctx, strconv.Itoa(int(userId)), config.ExpireTime)
 		return cnt - 1, err
@@ -409,6 +411,7 @@ func (followService *FollowServiceImp) CheckIsFollowing(userId int64, targetId i
 	//return followDao.FindFollowRelation(userId, targetId)
 
 	if flag, err := redis.UserFollowings.SIsMember(redis.Ctx, strconv.Itoa(int(userId)), targetId).Result(); flag {
+		redis.UserFollowings.SAdd(redis.Ctx, strconv.FormatInt(userId, 10), -1)
 		if err != nil {
 			return false, err
 		} else {
@@ -418,6 +421,7 @@ func (followService *FollowServiceImp) CheckIsFollowing(userId int64, targetId i
 
 	// 该键有效说明是没有关注
 	if cnt, err := redis.UserFollowings.SCard(redis.Ctx, strconv.Itoa(int(userId))).Result(); cnt > 0 {
+		redis.UserFollowings.SAdd(redis.Ctx, strconv.FormatInt(userId, 10), -1)
 		if err != nil {
 			return false, err
 		}
@@ -484,28 +488,16 @@ func ImportToRDBFriend(userId int64, ids []int64) {
 // BuildUser 根据传入的id列表和空user数组，构建业务所需user数组并返回
 func (followService *FollowServiceImp) BuildUser(userId int64, users []User, ids []int64, buildtype int) error {
 
-	followDao := dao.NewFollowDaoInstance()
-
 	for i := 0; i < len(ids); i++ {
-		//从缓存中获取的-1不能用,这种情况不存在
-		//if userFollowingsId[i] == -1 {
-		//	continue
-		//}
 
 		users[i].Id = ids[i]
 
-		var err1 error
-		user, err := followService.GetUserLoginInfoById(ids[i])
-		if err != nil {
-			log.Fatal(err)
+		// 这里非要使用user那边的接口！
+		user, err1 := followService.GetUserLoginInfoById(ids[i])
+		if err1 != nil {
+			log.Fatal(err1)
 		}
-
-		//users[i].Name, err1 = followDao.GetUserName(ids[i])
 		users[i].Name = user.Name
-		if nil != err1 {
-			log.Println(err1.Error())
-			return err1
-		}
 
 		var err2 error
 		users[i].FollowCount, err2 = followService.GetFollowingCnt(ids[i])
@@ -523,7 +515,7 @@ func (followService *FollowServiceImp) BuildUser(userId int64, users []User, ids
 
 		if buildtype == 1 {
 			// 粉丝用户的isfollow属性需要调用接口再确认一下
-			users[i].IsFollow, _ = followDao.FindFollowRelation(ids[i], userId)
+			users[i].IsFollow, _ = followService.CheckIsFollowing(userId, ids[i])
 		} else {
 			// 关注用户的isfollow属性确定是true
 			users[i].IsFollow = true
@@ -536,31 +528,17 @@ func (followService *FollowServiceImp) BuildUser(userId int64, users []User, ids
 // BuildFriendUser 根据传入的id列表和空frienduser数组，构建业务所需frienduser数组并返回
 func (followService *FollowServiceImp) BuildFriendUser(userId int64, friendUsers []FriendUser, ids []int64) error {
 
-	//followDao := dao.NewFollowDaoInstance()
 	msi := messageServiceImpl
 
 	for i := 0; i < len(ids); i++ {
-		//从缓存中获取的-1不能用,这种情况不存在
-		//if userFollowingsId[i] == -1 {
-		//	continue
-		//}
 
 		friendUsers[i].Id = ids[i]
 
-		var err1 error
-		user, err := followService.GetUserLoginInfoById(ids[i])
-		if err != nil {
-			log.Fatal(err)
+		user, err1 := followService.GetUserLoginInfoById(ids[i])
+		if err1 != nil {
+			log.Fatal(err1)
 		}
-
-		//users[i].Name, err1 = followDao.GetUserName(ids[i])
 		friendUsers[i].Name = user.Name
-		//friendUsers[i].Name, err1 = followDao.GetUserName(ids[i])
-
-		if nil != err1 {
-			log.Println(err1.Error())
-			return err1
-		}
 
 		var err2 error
 		friendUsers[i].FollowCount, err2 = followService.GetFollowingCnt(ids[i])
@@ -583,7 +561,6 @@ func (followService *FollowServiceImp) BuildFriendUser(userId int64, friendUsers
 
 		//在根据id获取不到最新一条消息时，需要返回对应的id
 		if err != nil {
-
 			continue
 		}
 
