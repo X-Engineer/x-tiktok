@@ -56,28 +56,17 @@ func GetLikeListByUserId(userId int64) ([]int64, error) {
 
 // VideoLikedCount 统计视频点赞数量
 func VideoLikedCount(videoId int64) (int64, error) {
-	var count int64
-	strVideoId := strconv.FormatInt(videoId, 10)
-	//数据库中查询点赞数量
-	err := Db.Model(Like{}).Where(map[string]interface{}{"video_id": videoId, "liked": 1}).Count(&count).Error
-	if err != nil {
-		log.Println("LikeDao-Count: return count failed") //函数返回提示错误信息
-		return -1, errors.New("find likes count failed")
-	}
-	log.Println("LikeDao-Count: return count success") //函数执行成功，返回正确信息
-
 	//维护Redis中videoId的点赞用户信息
 	//获取点赞当前视频的用户列表
-	userIdList, err1 := GetLikeUserList(videoId)
+	likeList, err1 := GetLikeUserList(videoId)
+	count := len(likeList)
 	if err1 != nil {
 		log.Printf(err1.Error())
 		return 0, err1
 	}
-	//依次将用户id添加到键为strVideoId的set中
-	for _, likeuserId := range userIdList {
-		redis.RdbLikeVideoId.SAdd(redis.Ctx, strVideoId, likeuserId)
-	}
-	return count, nil
+	strVideoId := strconv.FormatInt(videoId, 10)
+	redis.RdbLikeVideoCnt.Set(redis.Ctx, strVideoId, count, time.Hour)
+	return int64(count), nil
 }
 
 // UpdateLikeInfo 更新点赞数据
@@ -143,6 +132,7 @@ func IsVideoLikedByUser(userId int64, videoId int64) (int8, error) {
 	result := Db.Model(Like{}).Select("liked").Where("user_id= ? and video_id= ?", userId, videoId).First(&isLiked)
 	c := result.RowsAffected
 	if c == 0 {
+		log.Print("该用户没有点赞过此视频")
 		return -1, nil
 	}
 	if result.Error != nil {
@@ -208,6 +198,10 @@ func GetLikeUserList(videoId int64) ([]int64, error) {
 		log.Println("LikeUserIdList:", result.Error.Error())
 		return nil, result.Error
 	}
+	for i := 0; i < len(LikeUserList); i++ {
+		log.Printf("%d\n", LikeUserList[i])
+	}
+
 	strVideoId := strconv.FormatInt(videoId, 10)
 	//遍历userIdList,添加进key的集合中，若失败，删除key，并返回错误信息，这么做的原因是防止脏读，
 	//保证redis与mysql数据一致性
@@ -215,6 +209,12 @@ func GetLikeUserList(videoId int64) ([]int64, error) {
 		if _, err1 := redis.RdbLikeVideoId.SAdd(redis.Ctx, strVideoId, likeUserId).Result(); err1 != nil {
 			log.Printf("方法:FavouriteAction RedisLikeVideoId add value失败")
 			redis.RdbLikeVideoId.Del(redis.Ctx, strVideoId)
+			return nil, err1
+		}
+		strUserId := strconv.FormatInt(likeUserId, 10)
+		if _, err1 := redis.RdbLikeUserId.SAdd(redis.Ctx, strUserId, videoId).Result(); err1 != nil {
+			log.Printf("方法:FavouriteAction RedisLikeVideoId add value失败")
+			redis.RdbLikeUserId.Del(redis.Ctx, strUserId)
 			return nil, err1
 		}
 	}

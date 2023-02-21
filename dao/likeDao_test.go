@@ -41,6 +41,7 @@ func TestIsVideoLikedByUser(t *testing.T) {
 }
 
 func TestVideoLikedCount(t *testing.T) {
+	redis.InitRedis()
 	likeCnt, err := VideoLikedCount(20)
 	if err != nil {
 		log.Print(err.Error())

@@ -34,16 +34,7 @@ func NewLikeServImpInstance() *LikeServiceImpl {
 
 func (*LikeServiceImpl) FavoriteAction(userId int64, videoId int64, actionType int32) error {
 	//先看缓存里有无点赞数据
-	liked, err := likeServiceImp.RdsIsLikedByUser(userId, videoId)
-	if liked <= 1 {
-		//缓存没有命中则去数据库查询
-		islike, err1 := dao.IsVideoLikedByUser(userId, videoId)
-		if err1 != nil {
-			log.Print(err1.Error())
-		}
-		//将标记字段liked更新为数据库查询结果islike
-		liked = islike
-	}
+	liked, err := likeServiceImp.IsLikedByUser(userId, videoId)
 
 	log.Print("islike:", liked)
 	log.Println("actionType:", actionType)
@@ -51,7 +42,7 @@ func (*LikeServiceImpl) FavoriteAction(userId int64, videoId int64, actionType i
 	likeAddMQ := rabbitmq.SimpleLikeAddMQ
 	likeDelMQ := rabbitmq.SimpleLikeDelMQ
 	//根据是否有点赞记录来决定接下来的数据库操作，如果没有点赞记录则当前操作一定是点赞，则在like表中插入一条新的记录，执行insert命令
-	if liked == -1 {
+	if liked == false {
 		//用户没有点赞过该视频
 		//插入一条新记录
 		// 消息队列
@@ -142,14 +133,25 @@ func (*LikeServiceImpl) GetUserLikeCount(userId int64) (int64, error) {
 // GetVideoLikedCount 获取视频点赞数
 func (*LikeServiceImpl) GetVideoLikedCount(videoId int64) (int64, error) {
 	//step1：先查询缓存中的videoId键值
-	n, err := likeServiceImp.RdsGetVideoLikedCount(videoId)
+	cnt, err := likeServiceImp.RdsGetVideoLikedCount(videoId)
+	log.Printf("缓存查询成功！查询结果为：%d", cnt)
 	//没有命中缓存时n<0
-	if n < 0 {
-		//将int64 videoId转换为 string strVideoId
+	if cnt < 0 {
+		log.Printf("缓存查询失败，开始查数据库并更新缓存！")
+		if err != nil {
+			log.Print(err.Error())
+			return -1, err
+		}
+		//将int64 userId转换为 string strUserId
 		strVideoId := strconv.FormatInt(videoId, 10)
-		//step2：先对键videoId设置默认值，防止脏读
-		likeServiceImp.RedisSetDefaultValueAndExpireTime(redis.RdbLikeVideoId, strVideoId)
-		//step3：从数据库中查询点赞数并更新缓存信息
+		//cnt值为-1时，说明strUserId无记录，则需加入默认值防脏读
+		if cnt == -1 {
+			log.Println("strVideoId无记录，需加入默认值防脏读！")
+			if _, err0 := likeServiceImp.RedisSetDefaultValueAndExpireTime(redis.RdbLikeVideoId, strVideoId); err0 != nil {
+				return -1, err0
+			}
+		}
+		//从数据库中查询点赞数并更新缓存信息
 		likeCnt, err1 := dao.VideoLikedCount(videoId)
 		if err1 != nil {
 			log.Print("Get like count failed!")
@@ -162,7 +164,7 @@ func (*LikeServiceImpl) GetVideoLikedCount(videoId int64) (int64, error) {
 			return 0, err
 		} else {
 			//命中缓存，成功查询则返回值即可
-			return n, nil
+			return cnt, nil
 		}
 	}
 }
@@ -170,7 +172,7 @@ func (*LikeServiceImpl) GetVideoLikedCount(videoId int64) (int64, error) {
 // IsLikedByUser 当前用户是否点赞该视频
 func (*LikeServiceImpl) IsLikedByUser(userId int64, videoId int64) (bool, error) {
 	liked, err := likeServiceImp.RdsIsLikedByUser(userId, videoId)
-	if liked <= 1 {
+	if liked < 1 {
 		//缓存没有命中则去数据库查询
 		islike, err1 := dao.IsVideoLikedByUser(userId, videoId)
 		if err1 != nil {
@@ -237,7 +239,7 @@ func (i *LikeServiceImpl) RdsGetUserLikedCnt(userId int64) (int64, error) {
 	}
 
 	//如果key:strVideoId存在 则计算集合中userId个数
-	n, err := redis.RdbLikeVideoId.Exists(redis.Ctx, strUserId).Result()
+	n, err := redis.RdbLikeUserId.Exists(redis.Ctx, strUserId).Result()
 	if n > 0 {
 		//如果有问题，说明查询redis失败,返回默认false,返回错误信息
 		if err != nil {
@@ -264,8 +266,8 @@ func (i *LikeServiceImpl) RdsGetUserLikedCnt(userId int64) (int64, error) {
 		return -1, nil
 	}
 	//校验通过
-	log.Printf("方法:FavouriteCount RedisLikeVideoId query count succeed")
-	return LikeCnt, nil //去掉DefaultRedisValue
+	log.Printf("方法:FavouriteCount RedisLikeUserId query count succeed")
+	return LikeCnt, nil
 }
 
 func (*LikeServiceImpl) RdsGetVideoLikedCount(videoId int64) (int64, error) {
@@ -279,7 +281,20 @@ func (*LikeServiceImpl) RdsGetVideoLikedCount(videoId int64) (int64, error) {
 			return -1, err
 		}
 		cnt := redis.RdbLikeVideoCnt.Get(redis.Ctx, strVideoId).String()
+		log.Printf("RdbLikeVideoCnt缓存值为：%s", cnt)
 		LikeCnt, _ = strconv.ParseInt(cnt, 10, 64)
+	} else {
+		log.Printf("RdbLikeVideoCnt缓存查询失败！")
+		count, err0 := dao.VideoLikedCount(videoId)
+		log.Printf("数据库获取用户点赞数: %d", count)
+
+		if err0 != nil {
+			log.Printf("Redis：RdbLikeVideoCnt从数据库中获取用户点赞数失败" + err0.Error())
+			return -1, err
+		}
+		//cnt := redis.RdbLikeUserCnt.Get(redis.Ctx, strUserId).String()
+		//log.Printf("RdbLikeUserCnt new: " + cnt)
+		LikeCnt = count
 	}
 	//如果key:strVideoId存在 则计算集合中userId个数
 	n, err := redis.RdbLikeVideoId.Exists(redis.Ctx, strVideoId).Result()
@@ -287,7 +302,7 @@ func (*LikeServiceImpl) RdsGetVideoLikedCount(videoId int64) (int64, error) {
 		//如果有问题，说明查询redis失败,返回默认false,返回错误信息
 		if err != nil {
 			log.Printf("方法:FavouriteCount RedisLikeVideoId query key失败：%v", err)
-			return 0, err
+			return -1, err
 		}
 		/*******************************************************************************/
 		//数据一致性校验
@@ -299,15 +314,18 @@ func (*LikeServiceImpl) RdsGetVideoLikedCount(videoId int64) (int64, error) {
 		//将RdbLikeVideoId中的用户点赞数和RdbLikeVideoCnt的进行对比来保证数据一致性
 		if rdsLikeCnt-1 != LikeCnt {
 			log.Printf("视频获赞信息缓存数据不一致，需要从数据库中查询并更新数据！！")
-			return -1, nil
+			return -2, nil
 		}
 		/*******************************************************************************/
-		//校验通过，返回值
-		log.Printf("方法:FavouriteCount RedisLikeVideoId query count succeed")
-		return rdsLikeCnt - 1, nil //去掉DefaultRedisValue
+
+	} else {
+		//n<=0说明缓存中没有videoId，返回-1，执行数据库查询
+		log.Printf("RdbLikeVideorId缓存查询失败！")
+		return -1, nil
 	}
-	//n<=0说明缓存中没有videoId，返回-1，执行数据库查询
-	return -1, err
+	//校验通过
+	log.Printf("方法:FavouriteCount RedisLikeVideoId query count succeed")
+	return LikeCnt, nil
 }
 
 func (i *LikeServiceImpl) RdsIsLikedByUser(userId int64, videoId int64) (int8, error) {
@@ -324,14 +342,19 @@ func (i *LikeServiceImpl) RdsIsLikedByUser(userId int64, videoId int64) (int8, e
 			return -1, err
 		} //如果加载过此信息key:strUserId，则加入value:videoId
 		//如果redis LikeUserId 添加失败，数据库操作成功，会有脏数据，所以只有redis操作成功才执行数据库likes表操作
-		if _, err1 := redis.RdbLikeUserId.SAdd(redis.Ctx, strUserId, videoId).Result(); err1 != nil {
-			log.Printf("方法:FavouriteAction RedisLikeUserId add value失败：%v", err1)
-			return -1, err1
+		if like, err1 := redis.RdbLikeUserId.SIsMember(redis.Ctx, strUserId, videoId).Result(); !like {
+			if err1 != nil {
+				log.Printf("方法:FavouriteAction RedisLikeUserId sismember value失败：%v", err1)
+				return -1, err1
+			}
+			log.Print("缓存中没有该值")
+			return 0, nil
 		}
+		log.Print("命中缓存！点赞过哦~~")
 		return 1, nil
 	} else {
 		likeServiceImp.RedisSetDefaultValueAndExpireTime(redis.RdbLikeUserId, strUserId)
-		return 0, nil
+		return -1, nil
 	}
 
 	//查询Redis缓存中 LikeVideoId(key:strVideoId)是否已经加载过此信息
@@ -342,14 +365,18 @@ func (i *LikeServiceImpl) RdsIsLikedByUser(userId int64, videoId int64) (int8, e
 			return -1, err
 		} //如果加载过此信息key:strVideoId，则加入value:userId
 		//如果redis LikeVideoId 添加失败，返回错误信息
-		if _, err1 := redis.RdbLikeVideoId.SAdd(redis.Ctx, strVideoId, userId).Result(); err1 != nil {
-			log.Printf("方法:FavouriteAction RedisLikeVideoId add value失败：%v", err1)
-			return -1, err1
+		if like, err1 := redis.RdbLikeVideoId.SIsMember(redis.Ctx, strVideoId, userId).Result(); !like {
+			if err1 != nil {
+				log.Printf("方法:FavouriteAction RedisLikeVideoId sismember value失败：%v", err1)
+				return -1, err1
+			}
+			log.Print("缓存中没有该值")
+			return 0, nil
 		}
 		return 1, nil
 	} else {
 		likeServiceImp.RedisSetDefaultValueAndExpireTime(redis.RdbLikeVideoId, strVideoId)
-		return 0, nil
+		return -1, nil
 	}
 	//return 1, nil
 }
