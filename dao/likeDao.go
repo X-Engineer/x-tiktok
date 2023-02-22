@@ -44,6 +44,21 @@ func VideoLikedCount(videoId int64) (int64, error) {
 	return count, nil
 }
 
+// UsersOfLikeVideo 点赞该视频的用户 id 列表和数量
+func UsersOfLikeVideo(videoId int64) ([]int64, int64, error) {
+	var userIdList []int64
+	result := Db.Model(&Like{}).Where("video_id=? and liked=?", videoId, 1).Pluck("user_id", &userIdList)
+	likeCnt := result.RowsAffected
+	if likeCnt == 0 {
+		return nil, 0, result.Error
+	}
+	if result.Error != nil {
+		log.Println("UsersOfLikeVideo:", result.Error.Error())
+		return nil, 0, result.Error
+	}
+	return userIdList, likeCnt, nil
+}
+
 // UpdateLikeInfo 更新点赞数据
 func UpdateLikeInfo(userId int64, videoId int64, liked int8) error {
 	// Update即使更新不存在的记录也不会报错

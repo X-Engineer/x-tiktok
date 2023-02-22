@@ -29,6 +29,12 @@ var RdbCVid *redis.Client
 // RdbCIdComment 根据commentId 找comment
 var RdbCIdComment *redis.Client
 
+// RdbUVid 根据userId找到他点赞过的videoId
+var RdbUVid *redis.Client
+
+// RdbVUid 根据videoId找到点赞过它的userId
+var RdbVUid *redis.Client
+
 const (
 	ProdRedisAddr = "ip:port"
 	ProRedisPwd   = "redis-passwd"
@@ -55,6 +61,16 @@ func InitRedis() {
 		Addr:     ProdRedisAddr,
 		Password: ProRedisPwd,
 		DB:       3,
+	})
+	RdbUVid = redis.NewClient(&redis.Options{
+		Addr:     ProdRedisAddr,
+		Password: ProRedisPwd,
+		DB:       4,
+	})
+	RdbVUid = redis.NewClient(&redis.Options{
+		Addr:     ProdRedisAddr,
+		Password: ProRedisPwd,
+		DB:       5,
 	})
 	UserFollowings = redis.NewClient(&redis.Options{
 		Addr:     ProdRedisAddr,

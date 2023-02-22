@@ -381,7 +381,7 @@ func (followService *FollowServiceImp) GetFollowingCnt(userId int64) (int64, err
 func (followService *FollowServiceImp) GetFollowerCnt(userId int64) (int64, error) {
 	//followDao := dao.NewFollowDaoInstance()
 	//return followDao.GetFollowerCnt(userId)
-	redis.InitRedis()
+	//redis.InitRedis()
 	if cnt, err := redis.UserFollowers.SCard(redis.Ctx, strconv.Itoa(int(userId))).Result(); cnt > 0 {
 		redis.UserFollowers.Expire(redis.Ctx, strconv.Itoa(int(userId)), config.ExpireTime)
 		return cnt - 1, err
