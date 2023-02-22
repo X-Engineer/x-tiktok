@@ -3,8 +3,10 @@ package service
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"strconv"
 	"sync"
+	"time"
 	"x-tiktok/config"
 	"x-tiktok/dao"
 	"x-tiktok/middleware/rabbitmq"
@@ -25,6 +27,14 @@ var (
 
 // RedisFollowPrefix 前缀
 //var RedisFollowPrefix = "follow:"
+
+func CacheTimeGenerator() time.Duration {
+	// 先设置随机数 - 这里比较重要
+	rand.Seed(time.Now().Unix())
+	// 再设置缓存时间
+	// 10 + [0~20) 分钟的随机时间
+	return time.Duration((10 + rand.Int63n(20)) * int64(time.Minute))
+}
 
 func convertToInt64Array(strArr []string) ([]int64, error) {
 	int64Arr := make([]int64, len(strArr))
@@ -102,24 +112,42 @@ func (followService *FollowServiceImp) FollowAction(userId int64, targetId int64
 
 func AddToRDBWhenFollow(userId int64, targetId int64) {
 	followDao := dao.NewFollowDaoInstance()
-	res, err := redis.UserFollowings.Get(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
-	fmt.Println(res)
-
-	// 当前逻辑只判断了following数据库里是否存在userId键，不存在的话是把所有需要导入的数据库键全部导入，不知道这样做结果是否正确
-	if err == redis.NilError {
+	_, err := redis.UserFollowings.Get(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
+	if err != nil {
 		userFollowingsId, _, err1 := followDao.GetFollowingsInfo(userId)
-		//获取target的粉丝，直接刷新，关注时刷新target的粉丝
-		userFollowersId, _, err2 := followDao.GetFollowersInfo(targetId)
-
-		userFriendsId1, _, err3 := followDao.GetFriendsInfo(userId)
-		userFriendsId2, _, err4 := followDao.GetFriendsInfo(targetId)
-
-		if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
+		if err1 != nil {
 			return
 		}
 		ImportToRDBFollowing(userId, userFollowingsId)
+	}
+
+	_, err = redis.UserFollowings.Get(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
+	if err != nil {
+		//获取target的粉丝，直接刷新，关注时刷新target的粉丝
+		userFollowersId, _, err2 := followDao.GetFollowersInfo(targetId)
+		if err2 != nil {
+			return
+		}
 		ImportToRDBFollower(targetId, userFollowersId)
+	}
+
+	_, err = redis.UserFollowings.Get(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
+	if err != nil {
+		//获取target的粉丝，直接刷新，关注时刷新target的粉丝
+		userFriendsId1, _, err3 := followDao.GetFriendsInfo(userId)
+		if err3 != nil {
+			return
+		}
 		ImportToRDBFriend(userId, userFriendsId1)
+	}
+
+	_, err = redis.UserFollowings.Get(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
+	if err != nil {
+		//获取target的粉丝，直接刷新，关注时刷新target的粉丝
+		userFriendsId2, _, err4 := followDao.GetFriendsInfo(targetId)
+		if err4 != nil {
+			return
+		}
 		ImportToRDBFriend(targetId, userFriendsId2)
 	}
 
@@ -193,7 +221,7 @@ func DelToRDBWhenCancelFollow(userId int64, targetId int64) {
 func GetFollowingsByRedis(userId int64) ([]int64, int64, error) {
 	followDao := dao.NewFollowDaoInstance()
 	_, err := redis.UserFollowings.Get(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
-	if err == redis.NilError {
+	if err != nil {
 		userFollowingsId, userFollowingsCnt, err := followDao.GetFollowingsInfo(userId)
 		if err != nil {
 			log.Println(err.Error())
@@ -243,7 +271,7 @@ func (followService *FollowServiceImp) GetFollowings(userId int64) ([]User, erro
 func GetFollowersByRedis(userId int64) ([]int64, int64, error) {
 	followDao := dao.NewFollowDaoInstance()
 	_, err := redis.UserFollowers.Get(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
-	if err == redis.NilError {
+	if err != nil {
 		userFollowersId, userFollowersCnt, err := followDao.GetFollowersInfo(userId)
 		if err != nil {
 			log.Println(err.Error())
@@ -294,7 +322,7 @@ func (followService *FollowServiceImp) GetFollowers(userId int64) ([]User, error
 func GetFriendsByRedis(userId int64) ([]int64, int64, error) {
 	followDao := dao.NewFollowDaoInstance()
 	_, err := redis.UserFriends.Get(redis.Ctx, strconv.FormatInt(userId, 10)).Result()
-	if err == redis.NilError {
+	if err != nil {
 		userFriendsId, userFriendsCnt, err := followDao.GetFriendsInfo(userId)
 		if err != nil {
 			log.Println(err.Error())
@@ -358,7 +386,7 @@ func (followService *FollowServiceImp) GetFollowingCnt(userId int64) (int64, err
 		log.Println(err.Error())
 	}
 	if cnt > 0 {
-		redis.UserFollowings.Expire(redis.Ctx, strconv.Itoa(int(userId)), config.ExpireTime)
+		redis.UserFollowings.Expire(redis.Ctx, strconv.Itoa(int(userId)), CacheTimeGenerator())
 		return cnt - 1, err
 	}
 
@@ -369,7 +397,7 @@ func (followService *FollowServiceImp) GetFollowingCnt(userId int64) (int64, err
 		return 0, err
 	}
 
-	go ImportToRDBFollowing(userId, ids)
+	ImportToRDBFollowing(userId, ids)
 
 	return int64(len(ids)), nil
 }
@@ -385,7 +413,7 @@ func (followService *FollowServiceImp) GetFollowerCnt(userId int64) (int64, erro
 	//redis.InitRedis()
 	redis.UserFollowers.SAdd(redis.Ctx, strconv.FormatInt(userId, 10), -1)
 	if cnt, err := redis.UserFollowers.SCard(redis.Ctx, strconv.Itoa(int(userId))).Result(); cnt > 0 {
-		redis.UserFollowers.Expire(redis.Ctx, strconv.Itoa(int(userId)), config.ExpireTime)
+		redis.UserFollowers.Expire(redis.Ctx, strconv.Itoa(int(userId)), CacheTimeGenerator())
 		return cnt - 1, err
 	}
 
@@ -396,7 +424,7 @@ func (followService *FollowServiceImp) GetFollowerCnt(userId int64) (int64, erro
 		return 0, err
 	}
 
-	go ImportToRDBFollower(userId, ids)
+	ImportToRDBFollower(userId, ids)
 
 	return int64(len(ids)), nil
 }
@@ -407,10 +435,11 @@ func (followService *FollowServiceImp) GetFollowerCnt(userId int64) (int64, erro
 
 // CheckIsFollowing 判断当前登录用户是否关注了目标用户
 func (followService *FollowServiceImp) CheckIsFollowing(userId int64, targetId int64) (bool, error) {
-	//followDao := dao.NewFollowDaoInstance()
+	followDao := dao.NewFollowDaoInstance()
 	//return followDao.FindFollowRelation(userId, targetId)
 
-	if flag, err := redis.UserFollowings.SIsMember(redis.Ctx, strconv.Itoa(int(userId)), targetId).Result(); flag {
+	flag, err := redis.UserFollowings.SIsMember(redis.Ctx, strconv.Itoa(int(userId)), targetId).Result()
+	if flag {
 		redis.UserFollowings.SAdd(redis.Ctx, strconv.FormatInt(userId, 10), -1)
 		if err != nil {
 			return false, err
@@ -418,27 +447,29 @@ func (followService *FollowServiceImp) CheckIsFollowing(userId int64, targetId i
 			return true, nil
 		}
 	}
+	if err != nil {
+		return followDao.FindFollowRelation(userId, targetId)
+	}
 
 	// 该键有效说明是没有关注
-	if cnt, err := redis.UserFollowings.SCard(redis.Ctx, strconv.Itoa(int(userId))).Result(); cnt > 0 {
+	if cnt, err1 := redis.UserFollowings.SCard(redis.Ctx, strconv.Itoa(int(userId))).Result(); cnt > 0 {
 		redis.UserFollowings.SAdd(redis.Ctx, strconv.FormatInt(userId, 10), -1)
-		if err != nil {
-			return false, err
+		if err1 != nil {
+			return false, err1
 		}
 
-		redis.UserFollowings.Expire(redis.Ctx, strconv.Itoa(int(userId)), config.ExpireTime)
+		redis.UserFollowings.Expire(redis.Ctx, strconv.Itoa(int(userId)), CacheTimeGenerator())
 		return false, nil
 	}
 
 	// 该键无效，导入
-	followDao := dao.NewFollowDaoInstance()
-	ids, _, err := followDao.GetFollowingsInfo(userId)
-
-	if err != nil {
-		return false, err
+	//followDao := dao.NewFollowDaoInstance()
+	ids, _, err2 := followDao.GetFollowingsInfo(userId)
+	if err2 != nil {
+		return false, err2
 	}
 
-	go ImportToRDBFollowing(userId, ids)
+	ImportToRDBFollowing(userId, ids)
 
 	return followDao.FindFollowRelation(userId, targetId)
 
@@ -456,7 +487,7 @@ func ImportToRDBFollowing(userId int64, ids []int64) {
 		redis.UserFollowings.SAdd(redis.Ctx, strconv.FormatInt(userId, 10), int(id))
 	}
 
-	redis.UserFollowings.Expire(redis.Ctx, strconv.FormatInt(userId, 10), config.ExpireTime)
+	redis.UserFollowings.Expire(redis.Ctx, strconv.FormatInt(userId, 10), CacheTimeGenerator())
 }
 
 // ImportToRDBFollower 将登陆用户的关注id列表导入到follower数据库中
@@ -467,7 +498,7 @@ func ImportToRDBFollower(userId int64, ids []int64) {
 		redis.UserFollowers.SAdd(redis.Ctx, strconv.FormatInt(userId, 10), int(id))
 	}
 
-	redis.UserFollowers.Expire(redis.Ctx, strconv.FormatInt(userId, 10), config.ExpireTime)
+	redis.UserFollowers.Expire(redis.Ctx, strconv.FormatInt(userId, 10), CacheTimeGenerator())
 }
 
 func ImportToRDBFriend(userId int64, ids []int64) {
@@ -477,7 +508,7 @@ func ImportToRDBFriend(userId int64, ids []int64) {
 		redis.UserFriends.SAdd(redis.Ctx, strconv.FormatInt(userId, 10), int(id))
 	}
 
-	redis.UserFriends.Expire(redis.Ctx, strconv.FormatInt(userId, 10), config.ExpireTime)
+	redis.UserFriends.Expire(redis.Ctx, strconv.FormatInt(userId, 10), CacheTimeGenerator())
 }
 
 /*

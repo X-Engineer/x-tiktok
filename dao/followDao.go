@@ -174,6 +174,8 @@ func (*FollowDao) GetFriendsInfo(userId int64) ([]int64, int64, error) {
 			friendCnt--
 		}
 
+		i--
+
 	}
 	return friendId, friendCnt, nil
 
