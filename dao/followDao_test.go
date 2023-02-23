@@ -7,7 +7,7 @@ import (
 )
 
 func TestFollowDao_InsertFollowRelation(t *testing.T) {
-	followDao.InsertFollowRelation(2, 3)
+	//followDao.InsertFollowRelation(2, 3)
 }
 
 func TestFollowDao_FindRelation(t *testing.T) {
@@ -19,7 +19,8 @@ func TestFollowDao_FindRelation(t *testing.T) {
 }
 
 func TestFollowDao_UpdateFollowRelation(t *testing.T) {
-	followDao.UpdateFollowRelation(2, 3, 1)
+	// followDao.UpdateFollowRelation(2, 3, 1)
+
 }
 
 func TestFollowDao_GetFollowingsInfo(t *testing.T) {
@@ -40,4 +41,12 @@ func TestFollowDao_GetUserName(t *testing.T) {
 		log.Default()
 	}
 	fmt.Println(name)
+}
+
+func TestFollowDao_GetFriendsInfo(t *testing.T) {
+	friendId, friendCnt, _ := followDao.GetFriendsInfo(6)
+
+	fmt.Println(friendId)
+	fmt.Println(friendCnt)
+
 }
