@@ -49,7 +49,7 @@ func (commentService *CommentServiceImpl) CommentAction(comment dao.Comment) (Co
 		User:       user,
 		Content:    commentRes.Content,
 		CreateDate: commentRes.CreatedAt.Format(config.GO_STARTER_TIME),
-		LikeCount:  int64(rand.Intn(10000)),
+		LikeCount:  int64(rand.Intn(100)),
 		TeaseCount: int64(rand.Intn(100)),
 	}
 	// redis操作：将发表的评论id存入redis
@@ -193,7 +193,7 @@ func (commentService *CommentServiceImpl) CombineComment(comment *Comment, plain
 	comment.Id = plainComment.Id
 	comment.Content = plainComment.Content
 	comment.CreateDate = plainComment.CreatedAt.Format(config.GO_STARTER_TIME)
-	comment.LikeCount = int64(rand.Intn(10000))
+	comment.LikeCount = int64(rand.Intn(100))
 	comment.TeaseCount = int64(rand.Intn(100))
 	return nil
 }
