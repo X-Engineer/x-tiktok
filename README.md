@@ -25,6 +25,10 @@
 
 ![](https://raw.githubusercontent.com/zhicheng-ning/Pic-Go/main/md/whiteboard_exported_image.png)
 
+## Devlopment Document
+
+详细的开发答辩文档：https://bytedancecampus1.feishu.cn/docx/AURFd7pMCourqpxs8YDcriV6n9d
+
 ## Project Division
 
 | **团队成员**                                                 | **主要贡献**                                                 |
