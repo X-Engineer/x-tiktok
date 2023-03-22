@@ -3,6 +3,12 @@
 
 基于 Gin + Gorm + JWT + MySQL + Redis + RabbitMQ + OSS + Docker 实现的第五届字节跳动后端青训营极简版抖音，完成包含互动方向和社交方向的所有基础功能以及扩展功能，并通过缓存和消息队列等中间件来保证接口性能，提高用户体验。
 
+## Award
+
+<p align="center">
+  <img alt="超级码力奖" src="https://user-images.githubusercontent.com/39022409/226916716-ba2c06a0-7e86-4395-8f7f-03bcf5736950.png" width="40%">
+</p>
+
 ## Video Demo
 
 [第五届字节跳动后端青训营—X-Engineer 小组结业作品演示](https://www.bilibili.com/video/BV1nj411F7L1/?share_source=copy_web&vd_source=fcc347bbf1c653735e29efa79e12dc86)
@@ -71,6 +77,9 @@
 6. config your oss and jwt-token in config/config.go
 7. sh run.sh
 ```
+
+## Client APK
+[客户端 APK 下载地址](https://xlab-open-source.oss-cn-beijing.aliyuncs.com/zhicheng-ning/bytedance-go/x-tiktok/dousheng/app-release_3.apk)
 
 ## Thanks
 
