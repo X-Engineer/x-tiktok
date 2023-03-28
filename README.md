@@ -8,6 +8,9 @@
 <p align="center">
   <img alt="超级码力奖" src="https://user-images.githubusercontent.com/39022409/226916716-ba2c06a0-7e86-4395-8f7f-03bcf5736950.png" width="40%">
 </p>
+<p align="center">
+  <img alt="优秀营员证书" src="https://raw.githubusercontent.com/zhicheng-ning/Pic-Go/main/md/image-20230328135251322.png" width="40%">
+</p>
 
 ## Video Demo
 
